@@ -149,6 +149,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .back:hover { text-decoration: underline; }
 .back:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; border-radius: 4px; }
 .series-blurb { margin: 6px 0 12px; font-size: 14px; color: var(--muted); }
+/* The source's params (e.g. its base), between the description and the start position. */
+.series-params { margin-bottom: 12px; }
 /* Playback card: the Length row above Play. */
 .playback-card .length-row { margin-bottom: 14px; }
 

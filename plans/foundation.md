@@ -130,7 +130,7 @@ Nothing in Sonochrome is built around one series. This piece proves the interfac
 - The canvas, fill orders, readout and inspector go into `src/app/color/*`, reading the same `seq` and start position.
 - Parity check against the Color Generator prototype.
 
-### 7. Constants and bases
+### 7. Constants and bases (done 2026-11-21; steps in `plans/constants-and-bases.md`)
 - e, √2, φ and ln 2 are computed with GMP integer arithmetic in the worker (binary splitting or integer square roots).
 - The **base** param works for every constant: compute ⌊x·bⁿ⌋ and convert with `mpz_get_str(base)`. That gives, for example, π in base 12, one digit per chromatic note.
 - Tests: known digit prefixes for each constant and base.

@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–6 of `plans/foundation.md` are done. The player shows any series as **music** (at parity with the Pi Notes prototype) or **colour** (at parity with the Pi Color Generator), and the welcome page links to both views of each series. Plans: `plans/music-core.md`, `plans/music-player.md`, `plans/welcome-and-routing.md`, `plans/colour-tab.md`. Next is piece 7, more constants and number bases.
+**Status:** pieces 1–7 of `plans/foundation.md` are done. Six series: π, e, √2, φ and ln 2 (each in bases 2–8, 10, 12 or 16) and Thue–Morse. Each can be shown as **music** (at parity with the Pi Notes prototype) or **colour** (at parity with the Pi Color Generator), and the welcome page links to both views. Plans: `plans/music-core.md`, `plans/music-player.md`, `plans/welcome-and-routing.md`, `plans/colour-tab.md`, `plans/wide-layout.md`, `plans/constants-and-bases.md`. Next is piece 8, integer series.
 
 ## Layout
 
@@ -216,6 +216,7 @@ Changing the hash switches series or view in place, so browser Back and Forward 
   - **Colour:** Colour (mode, fill order, readout format), Series, Image (size and pixel size with presets, Copy colors, Download PNG, status).
 - **Series card** (shared by both views):
   - the series name, its description and a "← All series" link;
+  - the source's params: a **Base** select for the constants, kept in the route as `?base=12` (left out at the default of 10);
   - the start position, with presets and random start;
   - the progress bar and Cancel, when a view needs digits computed first.
 - **Card order** is CSS `order`, keyed on `main[data-active-view]`, which `showViewParts` sets. No elements move.
@@ -242,7 +243,7 @@ Modules behind the page, each with one job:
 | `app/dom.js` | `$(id)`, `fmtN(n)`, `fillSelect(select, [[value, label]])` |
 | `app/progress.js` | `showProgress(p, label, startedAt)`, `hideProgress()` |
 | `app/start.js` | The start position in the Series panel: `initStart(onChange)`, `readStart()` (validated, clamped to the source), `setStartLimit(source)` (hides presets and random ranges past it), `randomizeStart()`, `randomEachPlay()` |
-| `app/series-panel.js` | `showSeries(source)`: the panel heading, description and page titles |
+| `app/series-panel.js` | `showSeries(source, params, onParamsChange)`: the panel heading, description, page titles, and a select per source param. `routeParams(source, params)` keeps the valid, non-default params for the route; `paramValue(param, params)` gives one param's value. |
 | `app/route.js` | `parseRoute(hash)`, `formatRoute(id, params)`, `playerHref(id, params)` |
 | `app/music/controls.js` | The Length row and the Scheme and Sound forms: `initControls({ onChange, onTempoInput, onTempoSettled })`, `setSchemesFor(source, seq)`, `readSettings()` (with `readStart()`), `readOverrides(s)`, `showRows(s)`, voice helpers, `clefSetting()`. Pinned codes are kept per code length, and survive Firefox's form restore on reload. |
 | `app/music/chips.js` | The Digits → notes view: `renderChips`, `appendChips`, `removeChips`, `setChipOn`, `scrollChipIntoView`, keyed by logical event index |
@@ -337,7 +338,7 @@ See `plans/foundation.md`:
 4. The music player page (done)
 5. The welcome page and routing (done)
 6. The Colour tab (done)
-7. Constants (e, √2, φ, ln 2) in any number base
+7. Constants (e, √2, φ, ln 2) in any number base (done)
 8. Integer series (Nørgård, Recamán, Fibonacci word)
 
 Later: more series, key signatures, MIDI export, a played-range history, and a Rust/Leptos port.

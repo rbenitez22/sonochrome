@@ -36,3 +36,13 @@ test('every source has a player link that routes back to it', () => {
     }
   }
 });
+
+test('route params: defaults stay out of the route, unknown values fall back to the default', async () => {
+  const { routeParams, paramValue } = await import('../public/src/app/series-panel.js');
+  const e = sourceById('e'), base = e.params[0];
+  assert.deepEqual(routeParams(e, { base: '10' }), {});
+  assert.deepEqual(routeParams(e, { base: '12' }), { base: '12' });
+  assert.deepEqual(routeParams(e, { base: '11', junk: 'x' }), {});
+  assert.equal(paramValue(base, {}), '10');
+  assert.deepEqual(routeParams(sourceById('thue-morse'), { base: '12' }), {});
+});

@@ -11,7 +11,7 @@ import { parseRoute, formatRoute } from './route.js';
 import { createSupply } from './supply.js';
 import { showProgress, hideProgress } from './progress.js';
 import { initStart, setStartLimit } from './start.js';
-import { showSeries } from './series-panel.js';
+import { showSeries, routeParams } from './series-panel.js';
 import { initViewTabs, showViewParts } from './views.js';
 import { createMusicView } from './music/player.js';
 import { createColorView } from './color/view.js';
@@ -48,8 +48,8 @@ async function useSource(next, params) {
   supply?.cancel();
   supply?.stopRefill();
   source = next;
-  supply = createSupply(source, params);
-  showSeries(source);
+  supply = createSupply(source, routeParams(source, params));
+  showSeries(source, supply.params, (changed) => { location.hash = formatRoute(source.id, routeParams(source, changed), active.name); });
   setStartLimit(source);
   const probe = await supply.ready(1);
   for (const view of Object.values(views)) view.setSource(source, supply, probe);
@@ -68,7 +68,7 @@ async function onRoute() {
   const route = parseRoute(location.hash);
   const next = sourceById(route.id);
   if (!next) { location.replace('index.html'); return; }
-  if (next !== source || !sameParams(route.params, supply.params)) await useSource(next, route.params);
+  if (next !== source || !sameParams(routeParams(next, route.params), supply.params)) await useSource(next, route.params);
   else if (active && active.name !== route.view) active.hide();
   else if (active) return;
   selectView(route.view);
