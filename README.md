@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). Piece 4, the music player page (`plans/music-player.md`), is under way: steps 4a (the piece state and the symbol supply), 4b (the page) and 4c (sound and playback) are done. `play.html` plays any series; the piano roll, score and MusicXML come next. The welcome page is still a placeholder.
+**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). Piece 4, the music player page (`plans/music-player.md`), is under way: steps 4a–4d are done (piece state and supply, the page, playback, the piano roll, score and MusicXML): `play.html` plays any series with every view of the prototype. The parity checklist (4e) comes next; the welcome page is still a placeholder.
 
 ## Layout
 
@@ -155,7 +155,11 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
   - If the music catches up with a running refill, the clock pauses ("waiting for more digits…") and resumes when the refill lands.
   - With no refill possible, playback ends where the generated music ends ("Stopped: no more computed digits").
 - **After stopping,** the status shows the positions played. The player keeps a record of them, with the source, params and settings, for a future history store.
-- **Still to come:** the piano roll, the score and MusicXML (step 4d).
+- **Views:** Digits → notes (chips), Piano roll (canvas), and Sheet music (VexFlow 4.2.5 from jsDelivr, global `Vex`), one at a time. The page remembers the open tab.
+  - **While streaming,** the roll shows a 32-beat window and the score an 8-bar page that turns with the playhead.
+  - **Highlighting:** the playing notes light up in every view.
+  - **Clef:** Automatic picks bass for low voices; Treble and Bass apply to every voice.
+- **Download MusicXML** saves `<source id>-<start>-<end>.musicxml`, titled with the source's name and subtitled `Sonochrome: digits A–B`. Notes and Time save the whole piece; Infinite saves the bars played so far, so its button waits for Play.
 
 Modules behind the page, each with one job:
 
@@ -168,6 +172,9 @@ Modules behind the page, each with one job:
 | `app/music/tabs.js` | The view tabs (ARIA keyboard pattern), remembered under `sonochrome.music-tab` |
 | `app/music/instruments.js` | `INSTRUMENTS`, `GM_PROGRAM`, `instrumentLabel(id)`, and `playNote(ctx, inst, midi, t, d, out, nodes)`: twelve synthesised instruments (Web Audio oscillators, filters, a Karplus–Strong guitar) |
 | `app/music/transport.js` | The audio clock: `unlockAudio()` (inside a user gesture), `startAudio(nv, bpm)`, `elapsed()`, `secondsPerBeat()`, `scheduleNotes(voices, sched, instrumentOf)` (1.5 s lookahead), `suspendAudio()`/`resumeAudio()`, `stopAudio()` |
+| `app/music/roll.js` | `drawRoll(piece, cur, beatPos, stoppedAt)`: the piano roll, coloured from the CSS theme |
+| `app/music/score.js` | `renderScore(piece, clefSetting, atBeat)` (VexFlow), `showScoreMessage`, `setScoreNoteOn`, `scrollScoreTo`, and page tracking for streaming (`pageOf`, `renderedScorePage`, `scoreIsDirty`, `markScoreDirty`, `resetScorePage`) |
+| `app/music/download.js` | `updateDownload(piece, playing, playedBeats)`, `collectScore(evs, { sourceName, start, bpm, parts, clefSetting })` (pure, tested), `downloadMusicXML(piece, seq, beatsPlayed, meta)` |
 | `app/music/player.js` | Wiring: the source from the hash, `refresh()` (only the latest of overlapping refreshes shows its result), computing before playback, play/stop, the 150 ms pump, the per-frame tick, status lines, background refills |
 
 The two modules without DOM access:

@@ -11,10 +11,17 @@ import {
 } from './piece.js';
 import {
   initControls, setSource, readSettings, readOverrides, showRows, voiceCount, octaves, voiceLabel, instrumentOf,
-  lastDuration, randomizeStart, randomEachPlay,
+  lastDuration, randomizeStart, randomEachPlay, clefSetting,
 } from './controls.js';
 import { renderChips, clearChips, appendChips, removeChips, setChipOn, scrollChipIntoView } from './chips.js';
-import { initTabs, restoreTab } from './tabs.js';
+import { initTabs, restoreTab, isShown } from './tabs.js';
+import { drawRoll } from './roll.js';
+import {
+  renderScore, showScoreMessage, setScoreNoteOn, scrollScoreTo, pageOf, renderedScorePage, scoreIsDirty,
+  markScoreDirty, resetScorePage,
+} from './score.js';
+import { updateDownload, downloadMusicXML } from './download.js';
+import { GM_PROGRAM } from './instruments.js';
 import {
   unlockAudio, startAudio, secondsPerBeat, elapsed, scheduleNotes, suspendAudio, resumeAudio, stopAudio,
 } from './transport.js';
@@ -29,6 +36,8 @@ let source = null, supply = null, piece = null, pendingNeed = 0, refreshToken = 
 // of voice k's sounding event (-1 for none). sched[k]: its next unscheduled event.
 let playing = false, waiting = false, streamUsed = false, raf = 0, timer = 0, total = 0, endReason = '', lastSec = -1;
 let lastOn = [], sched = [], playedBeats = 0, lastPlayed = null;
+// The beat the score and roll follow (where playback is, or stopped), and the score width drawn last.
+let sheetBeat = 0, lastW = 0;
 
 const sourceFromHash = () => sourceById(decodeURIComponent(location.hash.slice(1))) ?? SOURCES[0];
 // Beats played so far in the current run (live while playing).
@@ -76,6 +85,8 @@ function showRangeNote() {
 function showPending(need) {
   const est = supply.estimateSeconds(need);
   clearChips();
+  showScoreMessage('The score appears once the digits are computed.');
+  drawRoll(null, null, -1);
   $('rangeNote').textContent = 'Digits up to ' + fmtN(need) + ' are not computed yet.';
   $('status').textContent = 'Press Play to compute them' + (est ? ' (about ' + est + ' sec on a laptop, longer on a phone).' : '.');
   pendingNeed = need;
@@ -94,6 +105,9 @@ async function refresh() {
   piece = null;
   streamUsed = false;
   playedBeats = 0;
+  sheetBeat = 0;
+  resetScorePage();
+  updateDownload(null, false, 0);
   supply.resetRefill();
   const need = symbolsFor(s, nv);
   const seq = await supply.ready(need);
@@ -104,7 +118,10 @@ async function refresh() {
   lastOn = piece.voices.map(() => -1);
   showRangeNote();
   renderChips(piece.voices, voiceLabel);
+  updateDownload(piece, false, 0);
   updateStatus();
+  renderScore(piece, clefSetting(), sheetBeat);
+  drawRoll(piece, null, -1);
 }
 
 // ---- computing before playback ----
@@ -186,6 +203,18 @@ function pump() {
 
 function setOn(k, idx, on) {
   setChipOn(k, idx, on);
+  setScoreNoteOn(k, idx, on);
+}
+
+const highlightPlaying = () => piece.voices.forEach((_, k) => setOn(k, lastOn[k], true));
+
+// Streaming: redraw the score when the playhead enters the next page.
+function turnScorePage(beat) {
+  if (pageOf(beat) === renderedScorePage()) return;
+  if (!isShown('sheet')) { markScoreDirty(); return; }
+  renderScore(piece, clefSetting(), beat);
+  highlightPlaying();
+  scrollScoreTo(lastOn[0]);
 }
 
 // Every animation frame: follow the playhead in the views, and stop at the end.
@@ -205,11 +234,15 @@ function tick() {
       setOn(k, lastOn[k], false);
       setOn(k, idx, true);
       scrollChipIntoView(k, idx);
+      if (k === 0) scrollScoreTo(idx);
       lastOn[k] = idx;
     }
   });
+  sheetBeat = beat;
+  if (piece.stream) turnScorePage(beat);
   if (piece.stream && piece.stream.out && supply.refilling && !waiting && beat >= piece.stream.genEnd - 0.1) waitForSymbols(el);
   if (Math.floor(el) !== lastSec) { lastSec = Math.floor(el); showPlayStatus(el); }
+  if (isShown('roll')) drawRoll(piece, lastOn, beat);
   raf = requestAnimationFrame(tick);
 }
 
@@ -226,6 +259,7 @@ async function startPlayback() {
   sched = piece.voices.map(() => 0);
   lastOn = piece.voices.map(() => -1);
   playing = true;
+  updateDownload(piece, true, 0);
   pump();
   timer = setInterval(pump, PUMP_MS);
   $('play').textContent = 'Stop';
@@ -248,7 +282,9 @@ function stop() {
   if (piece) piece.voices.forEach((_, k) => setOn(k, lastOn[k], false));
   lastOn = piece ? piece.voices.map(() => -1) : [];
   $('play').textContent = 'Play';
+  updateDownload(piece, false, playedBeats);
   showStoppedStatus();
+  drawRoll(piece, null, -1, sheetBeat);
 }
 
 // Play button: toggle; optionally re-randomise the start; compute symbols first if needed.
@@ -262,6 +298,50 @@ async function play() {
     return;
   }
   startPlayback();
+}
+
+// ---- views ----
+
+const playhead = () => (playing ? elapsed() / secondsPerBeat() : -1);
+
+// Bring a newly shown view up to date (views are not drawn while hidden).
+function onTabShown(name) {
+  if (name === 'roll') drawRoll(piece, playing ? lastOn : null, playhead(), sheetBeat);
+  if (name === 'sheet') {
+    const w = $('sheet').clientWidth;
+    if (scoreIsDirty() || w !== lastW) {
+      lastW = w;
+      renderScore(piece, clefSetting(), sheetBeat);
+      if (playing) highlightPlaying();
+    }
+  }
+}
+
+function saveMusicXML() {
+  if (!piece) return;
+  const saved = downloadMusicXML(piece, supply.seq, beatsPlayed(), {
+    sourceId: source.id, sourceName: source.name, bpm: +$('tempo').value, clefSetting: clefSetting(),
+    parts: piece.voices.map((_, k) => ({ name: voiceLabel(k), program: GM_PROGRAM[instrumentOf(k)] || 1 })),
+  });
+  if (!saved) $('status').textContent = 'Could not rebuild the score: the digits it needs are not computed.';
+}
+
+// Redraw the roll and (when stopped) the score after the window settles at a new size.
+let resizeTimer = 0;
+function onResize() {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    drawRoll(piece, playing ? lastOn : null, playhead(), sheetBeat);
+    const w = $('sheet').clientWidth;
+    if (w !== lastW && !playing) { lastW = w; renderScore(piece, clefSetting(), sheetBeat); }
+  }, 150);
+}
+
+// The theme changed: the canvas and the score take their colours from it.
+function recolor() {
+  if (playing) return;
+  renderScore(piece, clefSetting(), sheetBeat);
+  drawRoll(piece, null, -1, sheetBeat);
 }
 
 // ---- the source ----
@@ -295,6 +375,11 @@ initControls({
   onTempoInput: () => { if (playing) stop(); updateStatus(); },
   onTempoSettled: () => { if ($('lenMode').value !== 'notes') refresh(); },
 });
-initTabs(() => {});
+$('dlXml').addEventListener('click', saveMusicXML);
+window.addEventListener('resize', onResize);
+try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor); } catch (e) {}
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+initTabs(onTabShown);
 await useSource(sourceFromHash());
+lastW = $('sheet').clientWidth;
 restoreTab();

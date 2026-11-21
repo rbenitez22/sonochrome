@@ -67,6 +67,8 @@ export const octaves = () => vstate.slice(0, voiceCount()).map((v) => v.oct);
 export const instrumentOf = (k) => vstate[k].inst;
 export const voiceLabel = (k) => instrumentLabel(vstate[k].inst);
 export const lastDuration = () => lastDur;
+// The score's clef choice: 'auto', 'treble' or 'bass'.
+export const clefSetting = () => $('clef').value;
 
 // ---- rows that depend on other fields ----
 
@@ -154,7 +156,7 @@ export function initControls(h) {
   initPins();
   buildVoiceRows();
   $('codeLen').addEventListener('change', () => { switchPins(); h.onChange(); });
-  ['scheme', 'fixedLen', 'range', 'key', 'scale', 'count', 'start', 'over', 'lenMode', 'duration'].forEach((id) => {
+  ['scheme', 'fixedLen', 'range', 'key', 'scale', 'count', 'start', 'over', 'clef', 'lenMode', 'duration'].forEach((id) => {
     $(id).addEventListener(['over', 'count', 'start', 'duration'].includes(id) ? 'input' : 'change', h.onChange);
   });
   $('presets').addEventListener('click', (e) => {
