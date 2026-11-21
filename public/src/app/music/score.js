@@ -48,15 +48,19 @@ export function renderScore(piece, clefSetting, atBeat) {
       cur.push(b); w += need[b] + extra;
     }
     if (cur.length) systems.push(cur);
-    const rowH = 104, sysH = nv * rowH + 14;
-    const H = systems.length * sysH + 16;
     const cs = getComputedStyle(document.documentElement);
     const ink = cs.getPropertyValue('--ink').trim() || '#000';
+    /* Draw every system with stave v of system si at y = rowY[si][v], in an SVG H high. Returns the
+       notes drawn (per voice) and, per system and voice, how far the notes reach above and below
+       their stave's y (from VexFlow's bounding boxes; ledger lines included). */
+    const drawAll = (rowY, H) => {
+    box.innerHTML = '';
     const renderer = new V.Renderer(box, V.Renderer.Backends.SVG);
     renderer.resize(avail + 8, H);
     const c = renderer.getContext();
     c.setFillStyle(ink); c.setStrokeStyle(ink);
     const drawn = voices.map(() => []);
+    const reach = systems.map(() => voices.map(() => ({ up: 0, down: 0 })));
     systems.forEach((sys, si) => {
       const nat = sys.map((b, i) => need[b] + (i === 0 ? 42 + (si === 0 ? 26 : 0) : 0));
       const sum = nat.reduce((a, b) => a + b, 0);
@@ -66,7 +70,7 @@ export function renderScore(piece, clefSetting, atBeat) {
         const bw = nat[bi] * scale;
         const staves = [];
         for (let v = 0; v < nv; v++) {
-          const st = new V.Stave(x, si * sysH + v * rowH + 30, bw);
+          const st = new V.Stave(x, rowY[si][v], bw);
           if (bi === 0) { st.addClef(clefs[v]); if (si === 0) st.addTimeSignature('4/4'); }
           st.setContext(c).draw();
           staves.push(st);
@@ -84,6 +88,13 @@ export function renderScore(piece, clefSetting, atBeat) {
           new V.Formatter().joinVoices([voice]).format([voice], Math.max(30, st.getNoteEndX() - st.getNoteStartX() - 14));
           voice.draw(c, st);
           beams.forEach((bm) => bm.setContext(c).draw());
+          for (const n of notes) {
+            const bb = n.getBoundingBox && n.getBoundingBox();
+            if (!bb) continue;
+            const r = reach[si][v];
+            r.up = Math.max(r.up, rowY[si][v] - bb.getY());
+            r.down = Math.max(r.down, bb.getY() + bb.getH() - rowY[si][v]);
+          }
         }
         if (nv > 1) {
           const T = V.StaveConnector.type;
@@ -96,6 +107,27 @@ export function renderScore(piece, clefSetting, atBeat) {
         x += bw;
       });
     });
+    return { drawn, reach, c };
+    };
+
+    /* Each stave gets ROW_ABOVE px above its y and ROW_BELOW below (the prototype's fixed 104 px rows),
+       or more when its notes reach further (low notes on ledger lines, high notes above the staff),
+       so nothing is clipped and rows never overlap. Systems are SYSTEM_GAP apart. A first pass with
+       the fixed rows measures the notes; the second draws with the fitted rows. */
+    const ROW_ABOVE = 30, ROW_BELOW = 74, SYSTEM_GAP = 14, MARGIN = 6;
+    const place = (above, below) => {
+      let cursor = 0;
+      const rowY = systems.map((sys, si) => {
+        const ys = voices.map((vo, v) => { const y = cursor + above(si, v); cursor = y + below(si, v); return y; });
+        cursor += SYSTEM_GAP;
+        return ys;
+      });
+      return { rowY, H: cursor + 16 };
+    };
+    const fixed = place(() => ROW_ABOVE, () => ROW_BELOW);
+    const { reach } = drawAll(fixed.rowY, fixed.H);
+    const fitted = place((si, v) => Math.max(ROW_ABOVE, reach[si][v].up + MARGIN), (si, v) => Math.max(ROW_BELOW, reach[si][v].down + MARGIN));
+    const { drawn, c } = drawAll(fitted.rowY, fitted.H);
     drawn.forEach((list, v) => {
       list.forEach((p) => {
         if (p.ei < 0) return;
