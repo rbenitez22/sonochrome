@@ -18,23 +18,15 @@
   </header>
 
   <div class="stage">
-  <section class="card head-panel" aria-label="Playback">
-    <div class="head-options">
-      <h2>Options</h2>
+  <section class="card head-panel" aria-label="Series and playback">
+    <div class="head-options series-panel" aria-label="Series">
+      <h2>Series</h2>
+      <div class="series-head">
+        <span class="series-name" id="seriesTitle"></span>
+        <a class="back" href="index.html">&larr; All series</a>
+      </div>
+      <p class="series-blurb" id="seriesBlurb"></p>
       <div class="grid">
-        <div class="field">
-          <label for="lenMode">Length</label>
-          <select id="lenMode"><option value="notes">Notes</option><option value="time">Time</option><option value="infinite">Infinite (until Stop)</option></select>
-        </div>
-        <div class="field" id="rowCount">
-          <label for="count">Notes to play</label>
-          <input type="number" id="count" min="4" max="128" value="24">
-        </div>
-        <div class="field" id="rowDuration" hidden>
-          <label for="duration">Time (m:ss)</label>
-          <input type="text" id="duration" value="1:00" inputmode="numeric" autocomplete="off" spellcheck="false">
-          <p class="err" id="durErr" hidden></p>
-        </div>
         <div class="field wide">
           <label for="start">Start at position (0 is the first digit). Type 4M, 250k or 4,000,000.</label>
           <input type="text" id="start" value="0" inputmode="text" autocomplete="off" spellcheck="false">
@@ -54,6 +46,22 @@
       </div>
     </div>
     <div class="head-play">
+      <h2>Playback</h2>
+      <div class="grid length-row">
+        <div class="field">
+          <label for="lenMode">Length</label>
+          <select id="lenMode"><option value="notes">Notes</option><option value="time">Time</option><option value="infinite">Infinite (until Stop)</option></select>
+        </div>
+        <div class="field" id="rowCount">
+          <label for="count">Notes to play</label>
+          <input type="number" id="count" min="4" max="128" value="24">
+        </div>
+        <div class="field" id="rowDuration" hidden>
+          <label for="duration">Time (m:ss)</label>
+          <input type="text" id="duration" value="1:00" inputmode="numeric" autocomplete="off" spellcheck="false">
+          <p class="err" id="durErr" hidden></p>
+        </div>
+      </div>
       <div class="transport">
         <button class="play" id="play" type="button">Play</button>
         <div class="status" id="status" aria-live="polite"></div>

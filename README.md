@@ -153,6 +153,11 @@ playerHref('thue-morse');         // 'play.html#thue-morse'
 
 Changing the hash switches series in place, so browser Back and Forward move between series.
 
+**Layout:** the head panel pairs the **Series panel** (left) with **Playback** (right). On phones they stack.
+- **Series panel:** the series name, its description and a "← All series" link, then the start position with presets and random start. Piece 6's Colour tab shares this panel.
+- **Playback:** Length (Notes/Time/Infinite with its count or duration), Play, the status line and compute progress.
+- **Below:** the music views, with Scheme and Sound in the left column.
+
 - **Sources shape the controls:**
   - Start presets and random ranges beyond the source's `maxLength` are hidden. π stops at 19,999,999, so its 20M preset is hidden.
   - Schemes the source refuses are disabled, with the reason as a tooltip. If the current one is refused, the page picks the first allowed scheme.
@@ -182,7 +187,10 @@ Modules behind the page, each with one job:
 |---|---|
 | `app/dom.js` | `$(id)`, `fmtN(n)`, `fillSelect(select, [[value, label]])` |
 | `app/progress.js` | `showProgress(p, label, startedAt)`, `hideProgress()` |
-| `app/music/controls.js` | The Options, Scheme and Sound forms: `initControls({ onChange, onTempoInput, onTempoSettled })`, `setSource(source, seq)`, `readSettings()`, `readOverrides(s)`, `showRows(s)`, voice helpers, random start. Pinned codes are kept per code length, and survive Firefox's form restore on reload. |
+| `app/start.js` | The start position in the Series panel: `initStart(onChange)`, `readStart()` (validated, clamped to the source), `setStartLimit(source)` (hides presets and random ranges past it), `randomizeStart()`, `randomEachPlay()` |
+| `app/series-panel.js` | `showSeries(source)`: the panel heading, description and page titles |
+| `app/route.js` | `parseRoute(hash)`, `formatRoute(id, params)`, `playerHref(id, params)` |
+| `app/music/controls.js` | The Length row and the Scheme and Sound forms: `initControls({ onChange, onTempoInput, onTempoSettled })`, `setSchemesFor(source, seq)`, `readSettings()` (with `readStart()`), `readOverrides(s)`, `showRows(s)`, voice helpers, `clefSetting()`. Pinned codes are kept per code length, and survive Firefox's form restore on reload. |
 | `app/music/chips.js` | The Digits → notes view: `renderChips`, `appendChips`, `removeChips`, `setChipOn`, `scrollChipIntoView`, keyed by logical event index |
 | `app/music/tabs.js` | The view tabs (ARIA keyboard pattern), remembered under `sonochrome.music-tab` |
 | `app/music/instruments.js` | `INSTRUMENTS`, `GM_PROGRAM`, `instrumentLabel(id)`, and `playNote(ctx, inst, midi, t, d, out, nodes)`: twelve synthesised instruments (Web Audio oscillators, filters, a Karplus–Strong guitar) |

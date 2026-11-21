@@ -149,3 +149,14 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 :root[data-theme="dark"] .err { color: #ff8a80; }
 [hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+/* Series panel (left of the head panel): the series name, a link back to the welcome page, its
+   description, then the start position. Shared by every view of the series. */
+.series-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.series-name { font: 700 24px/1.1 var(--display); }
+.back { font: 500 13px/1 var(--mono); color: var(--accent); text-decoration: none; white-space: nowrap; }
+.back:hover { text-decoration: underline; }
+.back:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; border-radius: 4px; }
+.series-blurb { margin: 6px 0 12px; font-size: 14px; color: var(--muted); }
+/* Playback panel (right): the Length row above Play. */
+.head-play { justify-content: flex-start; }
+.head-play .length-row { margin-bottom: 14px; }

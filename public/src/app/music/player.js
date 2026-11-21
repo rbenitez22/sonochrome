@@ -11,9 +11,11 @@ import {
   notesPiece, streamPiece, fillStream, trimPlayed, eventAt, playedRange, symbolsFor, refillTarget, PREVIEW_BARS,
 } from './piece.js';
 import {
-  initControls, setSource, readSettings, readOverrides, showRows, voiceCount, octaves, voiceLabel, instrumentOf,
-  lastDuration, randomizeStart, randomEachPlay, clefSetting,
+  initControls, setSchemesFor, readSettings, readOverrides, showRows, voiceCount, octaves, voiceLabel, instrumentOf,
+  lastDuration, clefSetting,
 } from './controls.js';
+import { initStart, setStartLimit, randomizeStart, randomEachPlay } from '../start.js';
+import { showSeries } from '../series-panel.js';
 import { renderChips, clearChips, appendChips, removeChips, setChipOn, scrollChipIntoView } from './chips.js';
 import { initTabs, restoreTab, isShown } from './tabs.js';
 import { drawRoll } from './roll.js';
@@ -360,10 +362,9 @@ async function useSource(route) {
   supply?.stopRefill();
   source = route.source;
   supply = createSupply(source, route.params);
-  document.title = source.name + ' · Sonochrome';
-  $('seriesName').textContent = source.name;
-  $('bar').setAttribute('aria-label', 'Computing digits of ' + source.name);
-  setSource(source, await supply.ready(1));
+  showSeries(source);
+  setStartLimit(source);
+  setSchemesFor(source, await supply.ready(1));
   await refresh();
 }
 
@@ -375,6 +376,7 @@ $('cancel').addEventListener('click', () => {
   supply.cancel();
   $('status').textContent = 'Cancelled. Press Play to try again, or pick a smaller start position.';
 });
+initStart(refresh);
 initControls({
   onChange: refresh,
   onTempoInput: () => { if (playing) stop(); updateStatus(); },

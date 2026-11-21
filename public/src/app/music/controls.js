@@ -1,13 +1,13 @@
-/* The music controls: the Options, Scheme and Sound forms. Reads and validates them into settings,
-   keeps the rows that apply to the current scheme and length mode visible, and keeps one list of
-   pinned codes per code length. Limits (start presets, random range, largest start) come from the
-   source. Calls handlers.onChange() whenever the piece must be rebuilt. */
-import { $, fmtN, fillSelect } from '../dom.js';
+/* The music controls: the Length row and the Scheme and Sound forms. Reads and validates them into
+   settings (with the start position from the Series panel, start.js), keeps the rows that apply to the
+   current scheme and length mode visible, and keeps one list of pinned codes per code length.
+   Calls handlers.onChange() whenever the piece must be rebuilt. */
+import { $, fillSelect } from '../dom.js';
+import { readStart } from '../start.js';
 import { NAMES, SCALES } from '../../mappings/music/theory.js';
 import { SCHEMES } from '../../mappings/music/schemes.js';
 import { parseOverrides } from '../../mappings/music/overrides.js';
 import { parseDuration, DURATION_MIN, DURATION_MAX } from '../../mappings/music/timing.js';
-import { parseStart, randomStart } from '../../sources/position.js';
 import { INSTRUMENTS, instrumentLabel } from './instruments.js';
 
 const NOTES = {
@@ -20,19 +20,11 @@ const VDEF = [{ inst: 'piano', oct: 3 }, { inst: 'bass', oct: 2 }, { inst: 'bell
 const PIN_EXAMPLES = { 2: '31 = C4 1/2\n41 = rest 1/4', 3: '314 = C4 1/2\n159 = rest 1/4', 4: '3141 = C4 1/2\n1459 = rest 1/4' };
 
 const vstate = VDEF.map((v) => ({ ...v }));
-let source = null, handlers = null, lastStart = 0, lastDur = 60;
+let handlers = null, lastDur = 60;
 let pinLen = 4;
 const pinsByLen = { 2: '', 3: '', 4: '' };
 
 // ---- reading the form ----
-
-function readStart() {
-  const v = parseStart($('start').value), err = $('startErr'), max = source.maxLength - 1;
-  if (v === null) { err.hidden = false; err.textContent = 'Enter a whole number, like 5000, 250,000 or 4M.'; return lastStart; }
-  if (v > max) { err.hidden = false; err.textContent = 'The largest start position is ' + fmtN(max) + '.'; return (lastStart = max); }
-  err.hidden = true;
-  return (lastStart = v);
-}
 
 function readDuration() {
   const v = parseDuration($('duration').value), err = $('durErr');
@@ -122,15 +114,9 @@ function initPins() {
 
 // ---- source-dependent choices ----
 
-// Start presets and random ranges within the source; schemes it refuses are disabled with the reason.
-// The options stay in the markup (so Firefox can restore the form) and are hidden when out of range.
-export function setSource(next, seq) {
-  source = next;
-  const max = source.maxLength - 1;
-  for (const b of $('presets').querySelectorAll('button')) b.hidden = +b.dataset.v > max;
-  const randomMax = [...$('randomMax').options];
-  randomMax.forEach((o) => { o.hidden = o.disabled = +o.value > max; });
-  if ($('randomMax').selectedOptions[0]?.disabled) $('randomMax').value = randomMax.filter((o) => !o.disabled).at(-1).value;
+// Schemes the source refuses are disabled, with the reason as a tooltip; a refused current scheme
+// gives way to the first accepted one. seq is any seq of the source (only its base matters).
+export function setSchemesFor(source, seq) {
   for (const o of $('scheme').options) {
     const verdict = SCHEMES.find((sc) => sc.id === o.value).accepts(seq);
     o.disabled = verdict !== true;
@@ -138,12 +124,6 @@ export function setSource(next, seq) {
   }
   if ($('scheme').selectedOptions[0]?.disabled) $('scheme').value = [...$('scheme').options].find((o) => !o.disabled).value;
 }
-
-export function randomizeStart() {
-  $('start').value = fmtN(randomStart(Math.min(+$('randomMax').value, source.maxLength - 1)));
-}
-
-export const randomEachPlay = () => $('randomEach').checked;
 
 // ---- setup ----
 
@@ -156,16 +136,9 @@ export function initControls(h) {
   initPins();
   buildVoiceRows();
   $('codeLen').addEventListener('change', () => { switchPins(); h.onChange(); });
-  ['scheme', 'fixedLen', 'range', 'key', 'scale', 'count', 'start', 'over', 'clef', 'lenMode', 'duration'].forEach((id) => {
-    $(id).addEventListener(['over', 'count', 'start', 'duration'].includes(id) ? 'input' : 'change', h.onChange);
+  ['scheme', 'fixedLen', 'range', 'key', 'scale', 'count', 'over', 'clef', 'lenMode', 'duration'].forEach((id) => {
+    $(id).addEventListener(['over', 'count', 'duration'].includes(id) ? 'input' : 'change', h.onChange);
   });
-  $('presets').addEventListener('click', (e) => {
-    const b = e.target.closest('button');
-    if (!b) return;
-    $('start').value = b.dataset.v;
-    h.onChange();
-  });
-  $('randomBtn').addEventListener('click', () => { randomizeStart(); h.onChange(); });
   $('nv').addEventListener('change', () => { buildVoiceRows(); h.onChange(); });
   $('tempo').addEventListener('input', () => { $('tempoOut').textContent = $('tempo').value; h.onTempoInput(); });
   $('tempo').addEventListener('change', h.onTempoSettled);

@@ -27,7 +27,7 @@ test('the player page and the favicon are in public/, and both pages link the ic
 test('every id the player scripts look up exists in play.html', () => {
   const html = read('public/play.html');
   const dir = new URL('public/src/app/', root);
-  const files = ['dom.js', 'progress.js', 'music/controls.js', 'music/chips.js', 'music/tabs.js', 'music/player.js', 'music/roll.js', 'music/score.js', 'music/download.js'];
+  const files = ['dom.js', 'progress.js', 'start.js', 'series-panel.js', 'music/controls.js', 'music/chips.js', 'music/tabs.js', 'music/player.js', 'music/roll.js', 'music/score.js', 'music/download.js'];
   const ids = new Set(files.flatMap((f) => [...readFileSync(new URL(f, dir), 'utf8').matchAll(/\$\('([\w-]+)'\)/g)].map((m) => m[1])));
   for (const id of ids) assert.match(html, new RegExp(`id="${id}"`), id);
 });
