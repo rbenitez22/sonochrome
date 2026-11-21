@@ -10,6 +10,7 @@
 import { buildCountVoices, newStream, buildBar, regenerateVoices } from '../../mappings/music/voices.js';
 import { exportBeats } from '../../mappings/music/measures.js';
 import { symbolsPerBeat } from '../../mappings/music/schemes.js';
+import { eventSpan } from '../../mappings/music/reader.js';
 import { beatsForSeconds, streamSymbols, symbolsNeeded } from '../../mappings/music/timing.js';
 
 // Bars generated before playback, as a preview (Time/Infinite).
@@ -22,7 +23,7 @@ export const TRIM_BEHIND_BEATS = 64;
 export const REFILL = { atSec: 300, aheadSec: 1200 };
 
 const newVoice = (events = [], total = 0) => ({ events, total, off: 0, dropped: -1 });
-const lastPos = (e) => e.at + e.symbols.length - 1;
+const lastPos = (e) => e.at + eventSpan(e) - 1;
 
 // Total beats a Time piece lasts; Infinity for Infinite; null for Notes (set by the count).
 export function limitBeats(s) {

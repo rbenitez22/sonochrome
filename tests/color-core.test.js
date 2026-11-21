@@ -25,6 +25,8 @@ const pi = await sourceById('pi').prepare({}, 20_000);
 const tm = await sourceById('thue-morse').prepare({}, 20_000);
 const PI = symbolString(pi.slice(0, 20_000));
 const ORDER_KINDS = ORDERS.map(([k]) => k);
+// The modes the prototype has (the integer modes came later).
+const PROTO_MODES = MODES.filter((m) => m.id in P.modes);
 
 // The prototype's generate() loop, without the DOM.
 function prototypeCells(modeId, start, w, h, orderKind) {
@@ -37,8 +39,9 @@ function prototypeCells(modeId, start, w, h, orderKind) {
 }
 
 test('the modes are the prototype’s, in its order, with its names, hints and digits per cell', () => {
-  assert.deepEqual(MODES.map((m) => m.id), Object.keys(P.modes));
-  for (const m of MODES) {
+  assert.deepEqual(PROTO_MODES.map((m) => m.id), Object.keys(P.modes));
+  assert.deepEqual(MODES.slice(PROTO_MODES.length).map((m) => m.id), ['wheel', 'shade'], 'then the integer modes');
+  for (const m of PROTO_MODES) {
     assert.equal(m.name, P.modes[m.id].name);
     assert.equal(m.hint, P.modes[m.id].hint);
     assert.equal(m.dpc, P.modes[m.id].dpc);
@@ -49,7 +52,7 @@ test('the modes are the prototype’s, in its order, with its names, hints and d
 
 test('on π every mode × order × size × start gives the prototype’s cells', () => {
   let cases = 0;
-  for (const m of MODES) for (const orderKind of ORDER_KINDS)
+  for (const m of PROTO_MODES) for (const orderKind of ORDER_KINDS)
     for (const [w, h] of [[4, 4], [16, 16], [16, 9], [7, 3], [1, 5]]) for (const start of [0, 1, 777]) {
       const { cells, order } = buildCells(pi, start, w, h, m, orderKind);
       assert.deepEqual(cells, prototypeCells(m.id, start, w, h, orderKind), JSON.stringify({ mode: m.id, orderKind, w, h, start }));
@@ -88,10 +91,10 @@ test('formatColor and the HSL conversions match the prototype', () => {
 
 test('which modes accept which seqs', () => {
   const accepted = (seq) => MODES.filter((m) => m.accepts(seq) === true).map((m) => m.id);
-  assert.deepEqual(accepted(pi), MODES.map((m) => m.id));
+  assert.deepEqual(accepted(pi), PROTO_MODES.map((m) => m.id));
   assert.deepEqual(accepted(tm), ['rgb3', 'rgb2', 'gray', 'pal', 'cmyk']);
   assert.deepEqual(accepted({ base: 12 }), ['rgb3', 'rgb2', 'gray', 'cmyk']);
-  assert.deepEqual(accepted({ base: null }), []);
+  assert.deepEqual(accepted({ base: null }), ['wheel', 'shade']);
   for (const m of MODES) if (m.accepts(tm) !== true) assert.equal(typeof m.accepts(tm), 'string');
 });
 

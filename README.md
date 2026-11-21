@@ -77,8 +77,8 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 | `pi` (π), `e`, `sqrt2` (√2), `phi` (φ), `ln2` (ln 2) | digit, in base 2, 3, 4, 5, 6, 7, 8, 10, 12 or 16 (param `base`, default 10), up to 20,000,000 digits | Built by `makeConstant` in `sources/constant.js`, and computed from position 0. Up to 20,000 digits are computed on the page with the BigInt engine; π in base 10 uses Machin's formula there, exactly as in the prototype. Beyond that, the digits worker computes them with GMP (gmp-wasm 1.3.2 ESM from jsDelivr), or with BigInt if GMP can't load (Firefox's BigInt stops at about 157k decimal digits). One digit string is cached per base. A longer request recomputes from 0 and keeps the longest. Background requests (`allowInline: false`) always use the worker, however short. Position 0 is the first digit of the integer part, so ln 2 starts `0693…`. |
 | `thue-morse` | digit, base 2 | A formula (the parity of the 1 bits in n), so any position is instant and `prepare` does nothing. |
 | `fibonacci-word` (A003849) | digit, base 2 | The exact formula a(n) = 2 + ⌊(n+1)φ⌋ − ⌊(n+2)φ⌋, with ⌊nφ⌋ = ⌊(n + ⌊√5·n⌋)/2⌋ (Number arithmetic below 40M, BigInt above). Any position is instant. |
-| `norgard` (A004718) | int, signed and small | Nørgård's infinity series. A formula from the bits of n: a 1 adds one, a 0 negates. Any position is instant. Registered with the music and colour schemes for integers (piece 8b). |
-| `recaman` (A005132) | int, ≥ 0, growing (to about 6M) | Computed from 0 on the page and extended as needed (1M terms in about 12 ms, plus an 8 MB visited bitmap). Capped at 1,000,000 terms. Registered in piece 8b. |
+| `norgard` (A004718) | int, signed and small | Nørgård's infinity series. A formula from the bits of n: a 1 adds one, a 0 negates. Any position is instant.  |
+| `recaman` (A005132) | int, ≥ 0, growing (to about 6M) | Computed from 0 on the page and extended as needed (1M terms in about 12 ms, plus an 8 MB visited bitmap). Capped at 1,000,000 terms. |
 
 **Constants** (`sources/constant.js`): `makeConstant({ id, name, glyph, blurb, quick })` builds a source from an `ENGINES` id. `readBase(params)` turns `{ base: '12' }` into 12; a missing base, or one not in `BASES`, means 10.
 
@@ -132,7 +132,10 @@ readEvent(s, seq, {}, rd); // { rest: false, midi: 65, beats: 1, at: 0, symbols:
   - `codes` needs base 10, since its rules (`÷9`, `mod 7`) are tuned for decimal.
   - `degrees` reads any digit base. In base 12 with the Chromatic scale, each digit is one semitone.
   - `pairs` and `steps` read bases up to 10, because they index 10-entry tables.
-  - Integer series come in piece 8.
+  - `values` and `intervals` read **integer series** only (Nørgård, Recamán), one term per event, with the fixed note length and the Range setting. Positions past the range wrap around to the other end.
+    - **`values`:** "Value = scale step (centred)". The term counts scale steps from the middle of the range.
+    - **`intervals`:** "Differences = melodic steps". Each term moves the melody by its difference from the previous term (kept as `rd.prev`, saved and restored with the stream).
+  - **Event spans:** integer events carry `span` (positions read), since one term can be several characters. `eventSpan(e)` gives the span for any event.
 
 - **Voices:** `octs` lists one octave per voice, voice 1 first. Voice settings add `start` (the first position read) and, for Notes mode, `count` (voice 1's number of events).
   - **Notes mode:** voice 1 plays `count` events. Each later voice reads the symbols after the previous one and fills the same number of beats, so its last note is cut to fit.
@@ -187,6 +190,10 @@ const { cells } = buildCells(seq, 0, 16, 16, modeById('rgb3'), 'spiral');
 cells[0]; // { start, symbols: '…', rgb: [r, g, b] } for the cell at (0, 0)
 ```
 
+- **Integer series:** two modes read one term per cell.
+  - `wheel`: "Colour wheel · value mod 12", twelve evenly spaced hues.
+  - `shade`: "Shade · lowest to highest in the image", grey scaled between the image's smallest and largest term (`needsRange`; `buildCells` passes the range).
+  - The digit modes refuse integer series.
 - **Any base:** RGB 9, RGB 6, grey and CMYK scale each n-symbol group by `base^n − 1`, which is exactly the prototype's 999 or 99 for base 10. The palette takes bases up to 10. HSL and hex literal are base-10 only, since they read decimal digits as they stand.
   - Thue–Morse never repeats a block three times, so its RGB 9 levels run from 1/7 to 6/7 rather than 0 to 1.
 - **Spiral fix:** the prototype's spiral gave up after `8·w·h` steps, leaving cells out of long thin images (300×1). The limit now follows the longest side, and every order fills every cell exactly once (tested).

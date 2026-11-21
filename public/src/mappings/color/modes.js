@@ -1,7 +1,8 @@
 /* Colour modes: how a cell's symbols become a colour. Each mode reads `dpc` symbols per cell.
-   color(symbols, base) → [r, g, b], where symbols is a string with one character per symbol
-   ('0'-'9', then 'a'-'z') and base the seq's alphabet size. accepts(seq) → true, or the reason the
-   mode can't read that seq.
+   color(symbols, base, range) → [r, g, b], where symbols is a string with one character per symbol
+   ('0'-'9', then 'a'-'z') for a digit series, or the one term (e.g. "-3") for an integer series
+   (base null). Modes with needsRange get the image's { min, max } term as range. accepts(seq) → true,
+   or the reason the mode can't read that seq.
    The scaled modes divide by base^n − 1 (the largest n-symbol value), which for base 10 is exactly
    the prototype's 999 or 99; other bases still span the full range. Pure: no DOM. */
 import { hexToRgb, hsl2rgb } from './convert.js';
@@ -14,6 +15,7 @@ const scaled = (d, i, n, base) => parseInt(d.substr(i, n), base) / (base ** n - 
 const anyDigitBase = (seq) => (seq.base !== null && seq.base >= 2) || 'needs a digit series';
 const upToBase10 = (seq) => (seq.base !== null && seq.base <= 10) || 'needs a digit series in base 10 or lower';
 const base10Only = (reason) => (seq) => seq.base === 10 || reason;
+const integersOnly = (seq) => seq.base === null || 'needs an integer series';
 
 export const MODES = [
   { id: 'rgb3', name: "RGB · 9 digits (3 per channel)", dpc: 9, accepts: anyDigitBase,
@@ -37,6 +39,12 @@ export const MODES = [
   { id: 'cmyk', name: "CMYK · 8 digits (2 per ink)", dpc: 8, accepts: anyDigitBase,
     hint: "Four 2-digit values (00–99) become C, M, Y, K percentages, then convert to RGB.",
     color: (d, base) => { const [c,m,y,k] = [0,2,4,6].map(i => scaled(d, i, 2, base)); return [255*(1-c)*(1-k), 255*(1-m)*(1-k), 255*(1-y)*(1-k)].map(Math.round); } },
+  { id: 'wheel', name: "Colour wheel · value mod 12", dpc: 1, accepts: integersOnly,
+    hint: "Each term picks one of twelve evenly spaced hues by its value mod 12, so equal values share a colour.",
+    color: d => hsl2rgb((((+d % 12) + 12) % 12) * 30, 70, 50) },
+  { id: 'shade', name: "Shade · lowest to highest in the image", dpc: 1, accepts: integersOnly, needsRange: true,
+    hint: "Each term becomes a grey, from black for the image's lowest value to white for its highest.",
+    color: (d, base, { min, max }) => { const v = Math.round((max > min ? (+d - min) / (max - min) : 0.5) * 255); return [v, v, v]; } },
 ];
 
 export const modeById = (id) => MODES.find((m) => m.id === id) ?? null;

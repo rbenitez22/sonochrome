@@ -14,7 +14,9 @@ const NOTES = {
   codes: 'Digits are grouped into codes. A multiple of 9 is a rest. Otherwise the code divided by 9 picks a pitch in range, and the code modulo 7 picks the length. Pinned codes below override this rule; pinned chips have a dashed outline.',
   degrees: 'Each digit is a step on the scale: 0 is the key note, 7 is the key note one octave up (in a seven-note scale). Every note has the same length.',
   pairs: 'Digits are read in twos. The first picks the pitch (0 is a rest, 1 to 9 are scale steps). The second picks the length, from short (0) to long (9).',
-  steps: 'Each digit moves the melody from the previous note: 0 repeats, 1 to 4 go up that many scale steps, 5 to 8 go down 1 to 4, and 9 is a rest.'
+  steps: 'Each digit moves the melody from the previous note: 0 repeats, 1 to 4 go up that many scale steps, 5 to 8 go down 1 to 4, and 9 is a rest.',
+  values: 'Each term is a scale step counted from the middle of the range: 0 is the middle, 2 two steps up, −1 one step down. Steps past the range wrap around to the other end.',
+  intervals: 'Each term moves the melody by its difference from the previous term, in scale steps. Moves past the range wrap around to the other end.'
 };
 const VDEF = [{ inst: 'piano', oct: 3 }, { inst: 'bass', oct: 2 }, { inst: 'bells', oct: 4 }, { inst: 'strings', oct: 3 }];
 const PIN_EXAMPLES = { 2: '31 = C4 1/2\n41 = rest 1/4', 3: '314 = C4 1/2\n159 = rest 1/4', 4: '3141 = C4 1/2\n1459 = rest 1/4' };
@@ -68,8 +70,8 @@ export function showRows(s) {
   $('schemeNote').textContent = NOTES[s.scheme];
   $('rowCodeLen').hidden = s.scheme !== 'codes';
   $('rowOver').hidden = s.scheme !== 'codes';
-  $('rowLen').hidden = !(s.scheme === 'degrees' || s.scheme === 'steps');
-  $('rowRange').hidden = !(s.scheme === 'codes' || s.scheme === 'steps');
+  $('rowLen').hidden = !['degrees', 'steps', 'values', 'intervals'].includes(s.scheme);
+  $('rowRange').hidden = !['codes', 'steps', 'values', 'intervals'].includes(s.scheme);
   $('rowCount').hidden = s.mode !== 'notes';
   $('rowDuration').hidden = s.mode !== 'time';
 }

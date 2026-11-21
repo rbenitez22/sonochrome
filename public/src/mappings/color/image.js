@@ -3,6 +3,13 @@
 import { symbolString } from '../music/reader.js';
 import { cellOrder } from './order.js';
 
+// The smallest and largest of some values.
+function valueRange(values) {
+  let min = Infinity, max = -Infinity;
+  for (const v of values) { if (v < min) min = v; if (v > max) max = v; }
+  return { min, max };
+}
+
 // Positions an image reads: from start up to (not including) this one.
 export const symbolsNeeded = (start, w, h, dpc) => start + w * h * dpc;
 
@@ -22,10 +29,11 @@ export function fitSize(w, h, dpc, start, limit) {
 export function buildCells(seq, start, w, h, mode, orderKind) {
   const order = cellOrder(w, h, orderKind);
   const cells = new Array(w * h);
+  const range = mode.needsRange ? valueRange(seq.slice(start, start + w * h * mode.dpc)) : undefined;
   order.forEach(([x, y], i) => {
     const at = start + i * mode.dpc;
     const symbols = symbolString(seq.slice(at, at + mode.dpc), seq.base);
-    cells[y * w + x] = { start: at, symbols, rgb: mode.color(symbols, seq.base) };
+    cells[y * w + x] = { start: at, symbols, rgb: mode.color(symbols, seq.base, range) };
   });
   return { cells, order };
 }

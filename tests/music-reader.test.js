@@ -46,12 +46,15 @@ test('each event’s position and symbols point back into the seq', () => {
 
 test('schemes declare which seqs they accept', () => {
   const accepts = (seq) => Object.fromEntries(SCHEMES.map((sc) => [sc.id, sc.accepts(seq)]));
-  assert.deepEqual(accepts(piSeq), { codes: true, degrees: true, pairs: true, steps: true });
-  const tm = accepts(thueMorseSeq);
+  const DIGIT = ['codes', 'degrees', 'pairs', 'steps'], INT = ['values', 'intervals'];
+  const pi = accepts(piSeq), tm = accepts(thueMorseSeq);
+  for (const id of DIGIT) assert.equal(pi[id], true, id);
+  for (const id of INT) assert.equal(typeof pi[id], 'string', id);
   assert.equal(typeof tm.codes, 'string');
-  assert.deepEqual({ ...tm, codes: true }, { codes: true, degrees: true, pairs: true, steps: true });
+  for (const id of ['degrees', 'pairs', 'steps']) assert.equal(tm[id], true, id);
   const base12 = { base: 12 }, ints = { base: null };
   for (const sc of SCHEMES) {
+    if (INT.includes(sc.id)) { assert.equal(sc.accepts(ints), true, sc.id); assert.equal(typeof sc.accepts(base12), 'string', sc.id); continue; }
     assert.equal(typeof sc.accepts(ints), 'string', sc.id);
     if (sc.id === 'degrees') assert.equal(sc.accepts(base12), true, 'degrees reads any digit base');
     else assert.equal(typeof sc.accepts(base12), 'string', sc.id);

@@ -38,7 +38,7 @@ export function newStream(s, octs) {
 // (stream unchanged) when seq does not have enough symbols yet.
 export function buildBar(st, seq, overrides, limit = Infinity) {
   const barEnd = Math.min((st.bar + 1) * 4, limit);
-  const snap = { pos: st.pos, vs: st.voices.map((v) => ({ end: v.end, pos: v.rd.pos, cur: v.rd.cur })) };
+  const snap = { pos: st.pos, vs: st.voices.map((v) => ({ end: v.end, pos: v.rd.pos, cur: v.rd.cur, prev: v.rd.prev })) };
   const out = st.voices.map(() => []);
   for (let k = 0; k < st.voices.length; k++) {
     const v = st.voices[k];
@@ -47,7 +47,10 @@ export function buildBar(st, seq, overrides, limit = Infinity) {
       const e = readEvent(v.s, seq, overrides, v.rd);
       if (!e) {
         st.pos = snap.pos;
-        st.voices.forEach((w, i) => { w.end = snap.vs[i].end; w.rd.pos = snap.vs[i].pos; w.rd.cur = snap.vs[i].cur; });
+        st.voices.forEach((w, i) => {
+          w.end = snap.vs[i].end; w.rd.pos = snap.vs[i].pos; w.rd.cur = snap.vs[i].cur;
+          if (snap.vs[i].prev === undefined) delete w.rd.prev; else w.rd.prev = snap.vs[i].prev;
+        });
         return null;
       }
       if (v.end + e.beats > limit) e.beats = limit - v.end;

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { SOURCES } from '../public/src/sources/index.js';
 import { SCHEMES } from '../public/src/mappings/music/schemes.js';
-import { symbolString } from '../public/src/mappings/music/reader.js';
+import { symbolString, eventSpan } from '../public/src/mappings/music/reader.js';
 import { buildCountVoices, newStream, buildBar, regenerateVoices } from '../public/src/mappings/music/voices.js';
 import { toMeasures, measuresInRange } from '../public/src/mappings/music/measures.js';
 import { toMusicXML, padBars } from '../public/src/mappings/music/musicxml.js';
@@ -20,7 +20,7 @@ const BASE = { codeLen: 3, fixedLen: 0.5, range: 2, root: 0, scale: 'Major' };
 function assertEvents(seq, events) {
   let beat = 0;
   for (const e of events) {
-    assert.equal(symbolString(seq.slice(e.at, e.at + e.symbols.length)), e.symbols, 'event points at its symbols');
+    assert.equal(symbolString(seq.slice(e.at, e.at + eventSpan(e)), seq.base), e.symbols, 'event points at its symbols');
     assert.ok(Math.abs(e.startBeat - beat) < 1e-9, 'events are contiguous');
     assert.ok(e.beats > 0, 'every event has a length');
     assert.ok(e.rest ? e.midi === null : Number.isInteger(e.midi), 'a note has a pitch, a rest has none');
@@ -85,7 +85,12 @@ test('a scheme that refuses a seq gives a reason; among digit series only codes 
       refused.push(`${source.id}/${sc.id}`);
     }
   }
-  assert.deepEqual(refused.filter((r) => !r.startsWith('norgard/') && !r.startsWith('recaman/')), ['thue-morse/codes', 'fibonacci-word/codes']);
+  // Integer series refuse every digit scheme and digit series every integer scheme; among the rest,
+  // only codes refuses the binary series.
+  const intSeries = ['norgard', 'recaman'], intSchemes = ['values', 'intervals'];
+  const digitOnDigit = refused.filter((r) => { const [src, sc] = r.split('/'); return !intSeries.includes(src) && !intSchemes.includes(sc); });
+  assert.deepEqual(digitOnDigit, ['thue-morse/codes', 'fibonacci-word/codes']);
+  for (const src of intSeries) for (const sc of ['codes', 'degrees', 'pairs', 'steps']) assert.ok(refused.includes(`${src}/${sc}`), `${src}/${sc}`);
 });
 
 test('the music core never mentions π: it is one series among many', () => {
