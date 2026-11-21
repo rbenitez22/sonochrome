@@ -21,14 +21,15 @@ test('public/ holds the welcome page and nothing from outside the site', () => {
 test('the player page and the favicon are in public/, and both pages link the icon', () => {
   for (const page of ['public/index.html', 'public/play.html']) assert.match(read(page), /<link rel="icon" href="favicon.svg" type="image\/svg\+xml">/, page);
   assert.match(read('public/favicon.svg'), /^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" viewBox="0 0 64 64">/);
-  assert.match(read('public/play.html'), /<script type="module" src="src\/app\/music\/player.js"><\/script>/);
+  assert.match(read('public/play.html'), /<script type="module" src="src\/app\/play.js"><\/script>/);
 });
 
 test('every id the scripts of a page look up exists in that page', () => {
   const dir = new URL('public/src/app/', root);
   const pages = {
     'public/play.html': ['dom.js', 'progress.js', 'start.js', 'series-panel.js', 'music/controls.js', 'music/chips.js',
-      'music/tabs.js', 'music/player.js', 'music/roll.js', 'music/score.js', 'music/download.js'],
+      'music/tabs.js', 'music/player.js', 'music/roll.js', 'music/score.js', 'music/download.js',
+      'play.js', 'views.js', 'color/view.js'],
     'public/index.html': ['welcome.js'],
   };
   for (const [page, files] of Object.entries(pages)) {

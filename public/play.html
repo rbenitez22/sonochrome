@@ -14,7 +14,11 @@
 <main>
   <header class="masthead">
     <h1>Sono<span>chrome</span></h1>
-    <p class="sub">Read the digits of <span id="seriesName"></span> as music. Pick a scheme for turning digits into notes, then press play.</p>
+    <p class="sub">Read the digits of <span id="seriesName"></span> as music or colour. Pick how digits become notes or colours, then press play.</p>
+    <div class="view-tabs" role="tablist" aria-label="Views" id="viewTabs">
+      <button type="button" role="tab" id="view-music" data-pick="music" aria-controls="musicParts" aria-selected="true">Music</button>
+      <button type="button" role="tab" id="view-color" data-pick="color" aria-controls="colorParts" aria-selected="false" tabindex="-1">Colour</button>
+    </div>
   </header>
 
   <div class="stage">
@@ -44,8 +48,12 @@
           </div>
         </div>
       </div>
+      <div class="progress" id="prog" hidden>
+        <div class="bar" role="progressbar" aria-label="Computing digits" aria-valuemin="0" aria-valuemax="100" id="bar"><div class="fill" id="fill"></div></div>
+        <div class="progrow"><div class="status" id="progText"></div><button class="ghost" id="cancel" type="button">Cancel</button></div>
+      </div>
     </div>
-    <div class="head-play">
+    <div class="head-play" id="musicParts" data-view="music">
       <h2>Playback</h2>
       <div class="grid length-row">
         <div class="field">
@@ -63,17 +71,13 @@
         </div>
       </div>
       <div class="transport">
-        <button class="play" id="play" type="button">Play</button>
+        <button class="play compute-trigger" id="play" type="button">Play</button>
         <div class="status" id="status" aria-live="polite"></div>
-      </div>
-      <div class="progress" id="prog" hidden>
-        <div class="bar" role="progressbar" aria-label="Computing digits" aria-valuemin="0" aria-valuemax="100" id="bar"><div class="fill" id="fill"></div></div>
-        <div class="progrow"><div class="status" id="progText"></div><button class="ghost" id="cancel" type="button">Cancel</button></div>
       </div>
     </div>
   </section>
 
-  <section class="card music-card" aria-label="Music">
+  <section class="card music-card" aria-label="Music" data-view="music">
     <div class="cardhead">
       <div class="tabs" role="tablist" aria-label="Music views" id="tabs">
         <button type="button" role="tab" id="tab-digits" data-tab="digits" aria-controls="digitsBody" aria-selected="true">Digits<span class="long"> &rarr; notes</span></button>
@@ -97,10 +101,14 @@
       <div class="sheet" id="sheet"></div>
     </div>
   </section>
+
+  <section class="card color-card" id="colorParts" aria-label="Colour" data-view="color" hidden>
+    <p class="status" id="colorStatus">The colour view arrives in the next step.</p>
+  </section>
   </div>
 
   <aside class="controls" aria-label="Controls">
-  <section class="card" aria-label="Scheme">
+  <section class="card" aria-label="Scheme" data-view="music">
     <h2>Scheme</h2>
     <div class="grid">
       <div class="field wide">
@@ -135,7 +143,7 @@
     </div>
   </section>
 
-  <section class="card" aria-label="Sound">
+  <section class="card" aria-label="Sound" data-view="music">
     <h2>Sound</h2>
     <div class="grid">
       <div class="field">
@@ -161,6 +169,6 @@
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js"></script>
-<script type="module" src="src/app/music/player.js"></script>
+<script type="module" src="src/app/play.js"></script>
 </body>
 </html>

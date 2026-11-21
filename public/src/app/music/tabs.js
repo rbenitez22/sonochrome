@@ -19,7 +19,8 @@ export function selectTab(name) {
   onShown(name);
 }
 
-export const isShown = (name) => !$(name + 'Body').hidden;
+// True when view `name`'s panel is on screen: its tab is open and the Music view itself is shown.
+export const isShown = (name) => !$(name + 'Body').hidden && $(name + 'Body').offsetParent !== null;
 
 // onTabShown(name) brings a newly shown view up to date (views are not drawn while hidden).
 export function initTabs(onTabShown) {

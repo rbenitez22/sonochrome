@@ -175,20 +175,27 @@ Without JavaScript the page shows direct links to the players instead.
 
 `public/play.html` is the music player, at parity with the Pi Notes prototype's layout and controls. It opens the source named by the route in the hash, and an unknown or missing id sends the browser back to the welcome page.
 
-**Routes** (`app/route.js`): `#<source id>`, with optional `?key=value` source params for later sources (`#pi?base=12` in piece 7). Values stay strings; each source converts its own.
+**Routes** (`app/route.js`): `#<source id>[/<view>][?key=value…]`. The view is `music` (the default, left out of the hash) or `color`. The optional params are the source's, for later sources (`#pi?base=12` in piece 7). Values stay strings; each source converts its own.
 
 ```js
-parseRoute('#pi?base=12');        // { id: 'pi', params: { base: '12' } }
-formatRoute('pi', { base: 12 });  // '#pi?base=12'
-playerHref('thue-morse');         // 'play.html#thue-morse'
+parseRoute('#pi/color?base=12');           // { id: 'pi', view: 'color', params: { base: '12' } }
+formatRoute('pi', { base: 12 });           // '#pi?base=12'
+playerHref('thue-morse', {}, 'color');     // 'play.html#thue-morse/color'
 ```
 
-Changing the hash switches series in place, so browser Back and Forward move between series.
+Changing the hash switches series or view in place, so browser Back and Forward move between them.
 
-**Layout:** the head panel pairs the **Series panel** (left) with **Playback** (right). On phones they stack.
-- **Series panel:** the series name, its description and a "← All series" link, then the start position with presets and random start. Piece 6's Colour tab shares this panel.
-- **Playback:** Length (Notes/Time/Infinite with its count or duration), Play, the status line and compute progress.
-- **Below:** the music views, with Scheme and Sound in the left column.
+**Views:** **Music | Colour** tabs under the heading switch the page between views. Every element of one view carries `data-view="music"` or `data-view="color"`, and only the active view's are shown. Switching to Colour stops playback, and each view keeps its own settings.
+
+**Layout:** the head panel pairs the **Series panel** (left, shared by both views) with the active view's panel (right). On phones they stack.
+- **Series panel:**
+  - the series name, its description and a "← All series" link;
+  - the start position, with presets and random start;
+  - the progress bar and Cancel, when a view needs digits computed first.
+- **Music:**
+  - **Playback** (right): Length (Notes/Time/Infinite, with its count or duration), Play and the status line.
+  - **Below:** the music views, with Scheme and Sound in the left column.
+- **Colour:** arrives in step 6c (`plans/colour-tab.md`).
 
 - **Sources shape the controls:**
   - Start presets and random ranges beyond the source's `maxLength` are hidden. π stops at 19,999,999, so its 20M preset is hidden.
@@ -230,7 +237,9 @@ Modules behind the page, each with one job:
 | `app/music/roll.js` | `drawRoll(piece, cur, beatPos, stoppedAt)`: the piano roll, coloured from the CSS theme |
 | `app/music/score.js` | `renderScore(piece, clefSetting, atBeat)` (VexFlow), `showScoreMessage`, `setScoreNoteOn`, `scrollScoreTo`, and page tracking for streaming (`pageOf`, `renderedScorePage`, `scoreIsDirty`, `markScoreDirty`, `resetScorePage`) |
 | `app/music/download.js` | `updateDownload(piece, playing, playedBeats)`, `collectScore(evs, { sourceName, start, bpm, parts, clefSetting })` (pure, tested), `downloadMusicXML(piece, seq, beatsPlayed, meta)` |
-| `app/music/player.js` | Wiring: the source from the hash, `refresh()` (only the latest of overlapping refreshes shows its result), computing before playback, play/stop, the 150 ms pump, the per-frame tick, status lines, background refills |
+| `app/play.js` | The page entry: follows the route, creates the source's supply, fills the Series panel, runs foreground computes (`page.compute(need)`, with progress and Cancel), and switches views. Each view implements `{ name, computeVerb, setSource(source, supply, probe), refresh(), show(), hide(), status(text) }`. |
+| `app/views.js` | The Music \| Colour tabs: `initViewTabs(onPick)` (ARIA tabs pattern), `showViewParts(name)` |
+| `app/music/player.js` | The Music view, `createMusicView(page)`: `refresh()` (only the latest of overlapping refreshes shows its result), play/stop, the 150 ms pump, the per-frame tick, status lines, background refills |
 
 The two modules without DOM access:
 

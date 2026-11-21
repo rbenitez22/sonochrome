@@ -1,11 +1,6 @@
-/* The music player page: wires the source, its supply, the controls, the views and the transport.
-   The source and its params come from the route in the hash (play.html#thue-morse, see route.js);
-   an unknown source sends the browser back to the welcome page. */
+/* The Music view of the player page (see app/play.js): wires the music controls, the chips, roll and
+   score, and the transport, for the source and supply the page hands over. */
 import { $, fmtN } from '../dom.js';
-import { sourceById } from '../../sources/index.js';
-import { parseRoute } from '../route.js';
-import { createSupply } from '../supply.js';
-import { showProgress, hideProgress } from '../progress.js';
 import { fmtTime } from '../../mappings/music/timing.js';
 import {
   notesPiece, streamPiece, fillStream, trimPlayed, eventAt, playedRange, symbolsFor, refillTarget, PREVIEW_BARS,
@@ -14,8 +9,7 @@ import {
   initControls, setSchemesFor, readSettings, readOverrides, showRows, voiceCount, octaves, voiceLabel, instrumentOf,
   lastDuration, clefSetting,
 } from './controls.js';
-import { initStart, setStartLimit, randomizeStart, randomEachPlay } from '../start.js';
-import { showSeries } from '../series-panel.js';
+import { randomizeStart, randomEachPlay } from '../start.js';
 import { renderChips, clearChips, appendChips, removeChips, setChipOn, scrollChipIntoView } from './chips.js';
 import { initTabs, restoreTab, isShown } from './tabs.js';
 import { drawRoll } from './roll.js';
@@ -34,7 +28,8 @@ const AHEAD_BEATS = 48;
 // How often playback generates bars and schedules notes, in ms.
 const PUMP_MS = 150;
 
-let source = null, supply = null, piece = null, pendingNeed = 0, refreshToken = 0, computeTimer = 0;
+// page: the player page (its compute()); visible: whether this view is shown.
+let page = null, visible = false, source = null, supply = null, piece = null, pendingNeed = 0, refreshToken = 0;
 // Playback state. total: seconds the piece lasts (Infinity for Infinite). lastOn[k]: the logical index
 // of voice k's sounding event (-1 for none). sched[k]: its next unscheduled event.
 let playing = false, waiting = false, streamUsed = false, raf = 0, timer = 0, total = 0, endReason = '', lastSec = -1;
@@ -42,13 +37,6 @@ let lastOn = [], sched = [], playedBeats = 0, lastPlayed = null;
 // The beat the score and roll follow (where playback is, or stopped), and the score width drawn last.
 let sheetBeat = 0, lastW = 0;
 
-// The routed source and params, or null (after sending the browser to the welcome page) when unknown.
-function routedSource() {
-  const { id, params } = parseRoute(location.hash);
-  const source = sourceById(id);
-  if (!source) { location.replace('index.html'); return null; }
-  return { source, params };
-}
 // Beats played so far in the current run (live while playing).
 const beatsPlayed = () => (playing ? Math.max(0, elapsed() / secondsPerBeat()) : playedBeats);
 
@@ -131,33 +119,6 @@ async function refresh() {
   updateStatus();
   renderScore(piece, clefSetting(), sheetBeat);
   drawRoll(piece, null, -1);
-}
-
-// ---- computing before playback ----
-
-function endCompute() {
-  clearInterval(computeTimer);
-  hideProgress();
-  $('play').disabled = false;
-}
-
-// Foreground compute with a progress bar; resolves true once the positions are there.
-async function computeSymbols(need) {
-  $('play').disabled = true;
-  const startedAt = Date.now();
-  let p = 0, label = 'Starting';
-  showProgress(p, label, startedAt);
-  computeTimer = setInterval(() => showProgress(p, label, startedAt), 500);
-  try {
-    await supply.compute(need, (pp, l) => { p = pp; label = l; showProgress(p, label, startedAt); });
-    endCompute();
-    await refresh();
-    return true;
-  } catch (e) {
-    endCompute();
-    if (e?.name !== 'AbortError') $('status').textContent = 'Could not compute the digits: ' + (e?.message ?? e);
-    return false;
-  }
 }
 
 // ---- background refill (Time/Infinite) ----
@@ -303,7 +264,7 @@ async function play() {
   if (randomEachPlay()) { randomizeStart(); await refresh(); }
   if (pendingNeed) {
     unlockAudio();
-    if (await computeSymbols(pendingNeed) && !pendingNeed) startPlayback();
+    if (await page.compute(pendingNeed)) { await refresh(); if (!pendingNeed) startPlayback(); }
     return;
   }
   startPlayback();
@@ -353,40 +314,48 @@ function recolor() {
   drawRoll(piece, null, -1, sheetBeat);
 }
 
-// ---- the source ----
+// ---- the view ----
 
-async function useSource(route) {
-  if (!route) return;
-  if (playing) stop();
-  supply?.cancel();
-  supply?.stopRefill();
-  source = route.source;
-  supply = createSupply(source, route.params);
-  showSeries(source);
-  setStartLimit(source);
-  setSchemesFor(source, await supply.ready(1));
-  await refresh();
+let initialised = false;
+function init() {
+  initialised = true;
+  $('play').addEventListener('click', play);
+  initControls({
+    onChange: refresh,
+    onTempoInput: () => { if (playing) stop(); updateStatus(); },
+    onTempoSettled: () => { if ($('lenMode').value !== 'notes') refresh(); },
+  });
+  $('dlXml').addEventListener('click', saveMusicXML);
+  window.addEventListener('resize', () => { if (visible) onResize(); });
+  try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (visible) recolor(); }); } catch (e) {}
+  new MutationObserver(() => { if (visible) recolor(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  initTabs(onTabShown);
+  restoreTab();
 }
 
-// ---- setup ----
-
-window.addEventListener('hashchange', () => useSource(routedSource()));
-$('play').addEventListener('click', play);
-$('cancel').addEventListener('click', () => {
-  supply.cancel();
-  $('status').textContent = 'Cancelled. Press Play to try again, or pick a smaller start position.';
-});
-initStart(refresh);
-initControls({
-  onChange: refresh,
-  onTempoInput: () => { if (playing) stop(); updateStatus(); },
-  onTempoSettled: () => { if ($('lenMode').value !== 'notes') refresh(); },
-});
-$('dlXml').addEventListener('click', saveMusicXML);
-window.addEventListener('resize', onResize);
-try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor); } catch (e) {}
-new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
-initTabs(onTabShown);
-await useSource(routedSource());
-lastW = $('sheet').clientWidth;
-restoreTab();
+export function createMusicView(thePage) {
+  page = thePage;
+  return {
+    name: 'music',
+    computeVerb: 'Play',
+    // A new source: schemes it refuses are disabled (probe: a short seq of it, for its base).
+    setSource(next, nextSupply, probe) {
+      if (playing) stop();
+      source = next;
+      supply = nextSupply;
+      setSchemesFor(source, probe);
+    },
+    refresh,
+    async show() {
+      if (!initialised) init();
+      visible = true;
+      await refresh();
+      lastW = $('sheet').clientWidth;
+    },
+    hide() {
+      visible = false;
+      if (playing) stop();
+    },
+    status(text) { $('status').textContent = text; },
+  };
+}
