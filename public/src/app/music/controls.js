@@ -57,6 +57,8 @@ export const voiceLabel = (k) => instrumentLabel(vstate[k].inst);
 export const lastDuration = () => lastDur;
 // The score's clef choice: 'auto', 'treble' or 'bass'.
 export const clefSetting = () => $('clef').value;
+// The score's key signature choice: 'auto' (from the Key and Scale) or 'none' (C, no signature).
+export const keySigSetting = () => $('keySig').value;
 
 // ---- rows that depend on other fields ----
 
@@ -133,7 +135,7 @@ export function initControls(h) {
   initPins();
   buildVoiceRows();
   $('codeLen').addEventListener('change', () => { switchPins(); h.onChange(); });
-  ['scheme', 'fixedLen', 'range', 'key', 'scale', 'count', 'over', 'clef', 'lenMode', 'duration'].forEach((id) => {
+  ['scheme', 'fixedLen', 'range', 'key', 'scale', 'count', 'over', 'clef', 'keySig', 'lenMode', 'duration'].forEach((id) => {
     $(id).addEventListener(['over', 'count', 'duration'].includes(id) ? 'input' : 'change', h.onChange);
   });
   $('nv').addEventListener('change', () => { buildVoiceRows(); h.onChange(); });

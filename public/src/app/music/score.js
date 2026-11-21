@@ -2,7 +2,7 @@
    per voice. Note elements are kept per voice and logical event index, for highlighting the playing
    notes. While streaming, the score shows one page of PAGE_BARS bars at a time. */
 import { $ } from '../dom.js';
-import { NAMES } from '../../mappings/music/theory.js';
+import { vexKey } from '../../mappings/music/keys.js';
 import { toMeasures, measuresInRange, chooseClef } from '../../mappings/music/measures.js';
 import { isShown } from './tabs.js';
 
@@ -11,10 +11,13 @@ const PAGE_BARS = 8;
 const DUR = { 4:'w', 3:'hd', 2:'h', 1.5:'qd', 1:'q', 0.75:'8d', 0.5:'8', 0.25:'16' };
 
 let sheetEls = [], renderedPage = -1, dirty = false;
+// No key signature: C, notes spelled with flats.
+const NO_KEY = { fifths: 0, mode: null, name: 'C' };
 /* Draw the score for the piece: Notes mode, the whole piece; Time/Infinite, the PAGE_BARS-bar page
-   that holds `atBeat`. clefSetting is 'auto', 'treble' or 'bass'. VexFlow needs a real width, so
-   while the Sheet music tab is hidden this only marks the score as out of date. */
-export function renderScore(piece, clefSetting, atBeat) {
+   that holds `atBeat`. clefSetting is 'auto', 'treble' or 'bass'; key is the signature to draw and spell
+   in ({ fifths, name } from keySignature). VexFlow needs a real width, so while the Sheet music tab is
+   hidden this only marks the score as out of date. */
+export function renderScore(piece, clefSetting, atBeat, key = NO_KEY) {
   const box = $('sheet');
   box.innerHTML = '';
   const voices = piece ? piece.voices : [];
@@ -40,11 +43,13 @@ export function renderScore(piece, clefSetting, atBeat) {
     const need = [];
     for (let b = 0; b < nBars; b++) need.push(Math.max(72, 26 + 22 * Math.max(...bars.map((vb) => vb[b].length))));
     const avail = Math.max(240, (box.clientWidth || 340) - 8);
+    // The first bar of each system holds the clef and key signature (about 10 px per sharp or flat).
+    const lead = 42 + 10 * Math.abs(key.fifths);
     const systems = [];
     let cur = [], w = 0;
     for (let b = 0; b < nBars; b++) {
-      let extra = cur.length ? 0 : 42 + (systems.length ? 0 : 26);
-      if (cur.length && w + need[b] + extra > avail) { systems.push(cur); cur = []; w = 0; extra = 42; }
+      let extra = cur.length ? 0 : lead + (systems.length ? 0 : 26);
+      if (cur.length && w + need[b] + extra > avail) { systems.push(cur); cur = []; w = 0; extra = lead; }
       cur.push(b); w += need[b] + extra;
     }
     if (cur.length) systems.push(cur);
@@ -62,7 +67,7 @@ export function renderScore(piece, clefSetting, atBeat) {
     const drawn = voices.map(() => []);
     const reach = systems.map(() => voices.map(() => ({ up: 0, down: 0 })));
     systems.forEach((sys, si) => {
-      const nat = sys.map((b, i) => need[b] + (i === 0 ? 42 + (si === 0 ? 26 : 0) : 0));
+      const nat = sys.map((b, i) => need[b] + (i === 0 ? lead + (si === 0 ? 26 : 0) : 0));
       const sum = nat.reduce((a, b) => a + b, 0);
       const scale = si === systems.length - 1 ? Math.min(1, avail / sum) : avail / sum;
       let x = 4;
@@ -71,18 +76,18 @@ export function renderScore(piece, clefSetting, atBeat) {
         const staves = [];
         for (let v = 0; v < nv; v++) {
           const st = new V.Stave(x, rowY[si][v], bw);
-          if (bi === 0) { st.addClef(clefs[v]); if (si === 0) st.addTimeSignature('4/4'); }
+          if (bi === 0) { st.addClef(clefs[v]); st.addKeySignature(key.name); if (si === 0) st.addTimeSignature('4/4'); }
           st.setContext(c).draw();
           staves.push(st);
           const notes = bars[v][b].map((p) => {
-            const key = p.rest ? (clefs[v] === 'bass' ? 'd/3' : 'b/4') : NAMES[p.midi % 12].toLowerCase() + '/' + (Math.floor(p.midi / 12) - 1);
-            const n = new V.StaveNote({ keys: [key], duration: DUR[p.beats] + (p.rest ? 'r' : ''), clef: clefs[v] });
+            const noteKey = p.rest ? (clefs[v] === 'bass' ? 'd/3' : 'b/4') : vexKey(p.midi, key.fifths);
+            const n = new V.StaveNote({ keys: [noteKey], duration: DUR[p.beats] + (p.rest ? 'r' : ''), clef: clefs[v] });
             if (p.beats === 3 || p.beats === 1.5 || p.beats === 0.75) V.Dot.buildAndAttach([n], { all: true });
             drawn[v].push({ note: n, ei: p.ei, tie: p.tie, si });
             return n;
           });
           const voice = new V.Voice({ num_beats: 4, beat_value: 4 }).setMode(V.Voice.Mode.SOFT).addTickables(notes);
-          V.Accidental.applyAccidentals([voice], 'C');
+          V.Accidental.applyAccidentals([voice], key.name);
           // Beams must exist before the notes draw, or beamed notes also draw their own flags.
           const beams = V.Beam.generateBeams(notes);
           new V.Formatter().joinVoices([voice]).format([voice], Math.max(30, st.getNoteEndX() - st.getNoteStartX() - 14));

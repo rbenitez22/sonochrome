@@ -8,8 +8,9 @@ import {
 } from './piece.js';
 import {
   initControls, setSchemesFor, readSettings, readOverrides, showRows, voiceCount, octaves, voiceLabel, instrumentOf,
-  lastDuration, clefSetting,
+  lastDuration, clefSetting, keySigSetting,
 } from './controls.js';
+import { keySignature } from '../../mappings/music/keys.js';
 import { randomizeStart, randomEachPlay } from '../start.js';
 import { renderChips, clearChips, appendChips, removeChips, setChipOn, scrollChipIntoView } from './chips.js';
 import { initTabs, restoreTab, isShown } from './tabs.js';
@@ -40,6 +41,10 @@ let sheetBeat = 0, lastW = 0;
 
 // Beats played so far in the current run (live while playing).
 const beatsPlayed = () => (playing ? Math.max(0, elapsed() / secondsPerBeat()) : playedBeats);
+
+// The key signature the score and chips use: from the piece's Key and Scale, unless None (C) is chosen.
+const NO_KEY = { fifths: 0, mode: null, name: 'C' };
+const scoreKey = () => (piece && keySigSetting() !== 'none' ? keySignature(piece.s.root, piece.s.scale) : NO_KEY);
 
 // ---- status lines ----
 
@@ -115,10 +120,10 @@ async function refresh() {
   piece = s.mode === 'notes' ? notesPiece(s, seq, overrides, octaves()) : streamPiece(s, seq, overrides, octaves());
   lastOn = piece.voices.map(() => -1);
   showRangeNote();
-  renderChips(piece.voices, voiceLabel);
+  renderChips(piece.voices, voiceLabel, scoreKey().fifths);
   updateDownload(piece, false, 0);
   updateStatus();
-  renderScore(piece, clefSetting(), sheetBeat);
+  renderScore(piece, clefSetting(), sheetBeat, scoreKey());
   drawRoll(piece, null, -1);
 }
 
@@ -183,7 +188,7 @@ const highlightPlaying = () => piece.voices.forEach((_, k) => setOn(k, lastOn[k]
 function turnScorePage(beat) {
   if (pageOf(beat) === renderedScorePage()) return;
   if (!isShown('sheet')) { markScoreDirty(); return; }
-  renderScore(piece, clefSetting(), beat);
+  renderScore(piece, clefSetting(), beat, scoreKey());
   highlightPlaying();
   scrollScoreTo(lastOn[0]);
 }
@@ -282,7 +287,7 @@ function onTabShown(name) {
     const w = $('sheet').clientWidth;
     if (scoreIsDirty() || w !== lastW) {
       lastW = w;
-      renderScore(piece, clefSetting(), sheetBeat);
+      renderScore(piece, clefSetting(), sheetBeat, scoreKey());
       if (playing) highlightPlaying();
     }
   }
@@ -304,14 +309,14 @@ function onResize() {
   resizeTimer = setTimeout(() => {
     drawRoll(piece, playing ? lastOn : null, playhead(), sheetBeat);
     const w = $('sheet').clientWidth;
-    if (w !== lastW && !playing) { lastW = w; renderScore(piece, clefSetting(), sheetBeat); }
+    if (w !== lastW && !playing) { lastW = w; renderScore(piece, clefSetting(), sheetBeat, scoreKey()); }
   }, 150);
 }
 
 // The theme changed: the canvas and the score take their colours from it.
 function recolor() {
   if (playing) return;
-  renderScore(piece, clefSetting(), sheetBeat);
+  renderScore(piece, clefSetting(), sheetBeat, scoreKey());
   drawRoll(piece, null, -1, sheetBeat);
 }
 

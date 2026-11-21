@@ -2,19 +2,24 @@
    Chips are keyed by the event's logical index (see piece.js), so they survive dropped events. */
 import { $ } from '../dom.js';
 import { fmtLen } from '../../mappings/music/theory.js';
+import { spelledName } from '../../mappings/music/keys.js';
 
-let boxes = [], chips = [];
+// fifths: the key signature the note names are spelled in (0: flats, as midiName).
+let boxes = [], chips = [], fifths = 0;
 
 function makeChip(e, box) {
   const c = document.createElement('div');
   c.className = 'chip' + (e.rest ? ' rest' : '') + (e.pinned ? ' pinned' : '');
-  c.innerHTML = '<span class="dg">' + e.symbols + '</span><span class="nt">' + e.label + '</span><span class="du">' + fmtLen(e.beats) + '</span>';
+  const label = e.rest ? 'rest' : spelledName(e.midi, fifths);
+  c.innerHTML = '<span class="dg">' + e.symbols + '</span><span class="nt">' + label + '</span><span class="du">' + fmtLen(e.beats) + '</span>';
   box.appendChild(c);
   return c;
 }
 
-// All chips for the piece's voices; labelFor(k) names voice k when there are several.
-export function renderChips(voices, labelFor) {
+// All chips for the piece's voices; labelFor(k) names voice k when there are several. Note names are
+// spelled in the key with `keyFifths` sharps or flats.
+export function renderChips(voices, labelFor, keyFifths = 0) {
+  fifths = keyFifths;
   const wrap = $('chipsWrap');
   wrap.innerHTML = '';
   boxes = [];

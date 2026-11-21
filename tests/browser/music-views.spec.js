@@ -96,3 +96,33 @@ test('score rows fit their notes: nothing is clipped, however low or high', asyn
   await expect(page.locator('#sheet svg .vf-stavenote')).toHaveCount(192);
   expect(await outside()).toBe(0);
 });
+
+test('the score shows the key signature of the Key and Scale, and spells notes in it', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  for (const [id, v] of [['key', 4], ['scheme', 'degrees'], ['scale', 'Major']]) await setField(page, id, v);   // E major
+  await expect(page.locator('.chip .nt').nth(1)).toHaveText('F#3');
+  await page.click('#tab-sheet');
+  await page.waitForSelector('#sheet svg .vf-keysignature');
+  // Accidentals draw as extra paths inside the notes: E major's notes need none, None (C) spells them with flats.
+  const notePaths = () => page.$$eval('#sheet svg .vf-stavenote', (ns) => ns.reduce((t, n) => t + n.querySelectorAll('path').length, 0));
+  const inKey = await notePaths();
+  const keyPaths = await page.$$eval('#sheet svg .vf-keysignature', (ks) => ks.map((k) => k.querySelectorAll('path').length).filter((n) => n > 0));
+  expect(keyPaths.length).toBeGreaterThan(0);
+  expect(keyPaths.every((n) => n === 4)).toBe(true);   // four sharps on every system
+  await page.selectOption('#keySig', 'none');
+  await expect(page.locator('.chip .nt').nth(1)).toHaveText('Gb3');
+  await expect.poll(notePaths).toBeGreaterThan(inKey);
+  expect(await page.$$eval('#sheet svg .vf-keysignature path', (ps) => ps.length)).toBe(0);
+});
+
+test('C major keeps the flat spelling and no signature', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  await page.click('#tab-sheet');
+  await page.waitForSelector('#sheet svg');
+  expect(await page.$$eval('#sheet svg .vf-keysignature path', (ps) => ps.length)).toBe(0);
+  for (const [id, v] of [['key', 5], ['scale', 'Natural minor']]) await setField(page, id, v);   // F minor: 4 flats
+  // One signature per system (the score may wrap onto several), each with four flats.
+  await expect.poll(() => page.$$eval('#sheet svg .vf-keysignature', (ks) => ks.map((k) => k.querySelectorAll('path').length).filter((n) => n > 0))).toEqual(expect.arrayContaining([4]));
+  const counts = await page.$$eval('#sheet svg .vf-keysignature', (ks) => ks.map((k) => k.querySelectorAll('path').length).filter((n) => n > 0));
+  expect(counts.every((n) => n === 4)).toBe(true);
+});
