@@ -1,8 +1,10 @@
-# Chromatone
+# Sonochrome
 
 Music and colour from number series. Pick a series (π, e, the golden ratio, Nørgård's infinity series, Recamán's sequence and others), then **hear** it as a melody with a score, or **see** it as an image. Any long series that never falls into a loop can drive both.
 
-Chromatone generalises two single-file prototypes, kept unchanged in `prototypes/`:
+*Sono-* (sound) + *-chrome* (colour). The project was named Chromatone until 2026-11-21.
+
+Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes/`:
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
@@ -27,7 +29,7 @@ Planned under `public/src/` (see `plans/foundation.md`):
 ## Requirements
 
 - **Node 22+:** only for `npm test`. There are no npm dependencies.
-- **Deploying:** a Cloudflare account with a Pages project named `chromatone`. The optional terminal deploy fetches wrangler through `npx` at a pinned version (4.166.0) and needs `npx wrangler@4.166.0 login` once.
+- **Deploying:** a Cloudflare account with a Pages project named `sonochrome`. The optional terminal deploy fetches wrangler through `npx` at a pinned version (4.166.0) and needs `npx wrangler@4.166.0 login` once.
 
 ## Commands
 
@@ -35,13 +37,13 @@ Planned under `public/src/` (see `plans/foundation.md`):
 |---|---|
 | `npm test` | Runs every `tests/**/*.test.js` with Node's built-in test runner. |
 | `npm run dev` | Serves `public/` at http://localhost:8000 (Python's built-in server). Any static server works; there's no build step. |
-| `npm run deploy` | Optional: uploads `public/` to the Pages project `chromatone` (`wrangler pages deploy`), the same as uploading it in the dashboard. |
+| `npm run deploy` | Optional: uploads `public/` to the Pages project `sonochrome` (`wrangler pages deploy`), the same as uploading it in the dashboard. |
 
 ## Deployment
 
 The site is deployed to **Cloudflare Pages** the same way as pi-notes: by uploading a folder, with no build step.
 
-- **The folder is `public/`.** In the dashboard: Workers & Pages → the `chromatone` Pages project (create it with "Upload assets" the first time) → new deployment → upload `public/`. The site is served at `https://chromatone.pages.dev`.
+- **The folder is `public/`.** In the dashboard: Workers & Pages → the `sonochrome` Pages project (create it with "Upload assets" the first time) → new deployment → upload `public/`. The site is served at `https://sonochrome.pages.dev`.
 - **From the terminal**, `npm run deploy` does the same upload.
 - **Deploy on push** is possible later: connect the GitHub repo to the Pages project, with an empty build command and output directory `public`.
 - **Response headers** (`public/_headers`, which Pages reads):

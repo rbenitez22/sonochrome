@@ -1,5 +1,5 @@
 {
-  "name": "chromatone",
+  "name": "sonochrome",
   "version": "0.1.0",
   "private": true,
   "description": "Music and colour from number series.",
@@ -8,6 +8,6 @@
   "scripts": {
     "test": "node --test 'tests/**/*.test.js'",
     "dev": "python3 -m http.server 8000 -d public",
-    "deploy": "npx wrangler@4.166.0 pages deploy public --project-name chromatone"
+    "deploy": "npx wrangler@4.166.0 pages deploy public --project-name sonochrome --branch splinter"
   }
 }

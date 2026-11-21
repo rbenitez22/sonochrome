@@ -1,6 +1,8 @@
-# Plan: Chromatone foundation — music and colour from number series
+# Plan: Sonochrome foundation — music and colour from number series
 
-Chromatone generalises two single-file prototypes from `/programming/pi-notes`:
+*Named Chromatone until 2026-11-21. It was renamed because `chromatone.pages.dev` and an existing music-and-colour project already use that name.*
+
+Sonochrome generalises two single-file prototypes from `/programming/pi-notes`:
 
 - **Pi Notes** (`index.html`, at commit `a51e4e5`): pi digits → melody. It covers schemes, Notes/Time/Infinite lengths, streaming playback, digit chips, piano roll, a VexFlow score, MusicXML download, and GMP pi up to 20M digits.
 - **Pi Color Generator** (`Pi Color Generator.html`): pi digits → coloured cells. It has several colour modes and fill orders.
@@ -18,15 +20,15 @@ The user chose plain JS modules, Cloudflare Pages (deployed like pi-notes) and t
    - Alternative: start in Leptos now and call VexFlow and gmp-wasm through JS interop.
 2. **Flow: series first, then Music | Colour tabs.** The welcome page lists the series as cards. Picking one opens a single player page (`play.html#pi`), where the source settings, start position and played-range tracking are shared by both tabs.
 3. **History: a fresh repo.** The first commit notes where the code came from (pi-notes `a51e4e5`). The alternative is to import pi-notes' history with `git subtree`.
-4. **Cloudflare service: Pages, project `chromatone`**, deployed by uploading `public/`, the same way as pi-notes. Workers static assets were the first proposal; see Deployment.
+4. **Cloudflare service: Pages, project `sonochrome`**, deployed by uploading `public/`, the same way as pi-notes. Workers static assets were the first proposal; see Deployment.
 5. **License:** none in pi-notes today. gmp-wasm is LGPL-3.0 and is loaded unmodified from a CDN, so any license works. MIT is the simple choice, but it's your call.
 
-## Deployment (Cloudflare Pages, project `chromatone`, the same way as pi-notes)
+## Deployment (Cloudflare Pages, project `sonochrome`, the same way as pi-notes)
 
 The site is entirely static: no server code and no build step. Everything the browser loads lives under `public/`, and **`public/` is the folder that gets uploaded**. Nothing else is deployed.
 
 ```
-chromatone/
+sonochrome/
   public/                  ← the folder uploaded to Cloudflare Pages
     index.html             welcome page
     play.html              player (Music | Colour tabs)
@@ -41,8 +43,8 @@ chromatone/
   package.json             "type": "module"; scripts: test, dev, deploy
 ```
 
-- **The pi-notes way (dashboard):** Workers & Pages → Create → Pages → upload assets. Project `chromatone`; drop the `public/` folder. To publish a new version, upload a new deployment of `public/`. The site is served at `chromatone.pages.dev`.
-- **The same from the terminal (optional):** `npm run deploy`, which runs `wrangler pages deploy public --project-name chromatone`. It needs `npx wrangler@4.166.0 login` once.
+- **The pi-notes way (dashboard):** Workers & Pages → Create → Pages → upload assets. Project `sonochrome`; drop the `public/` folder. To publish a new version, upload a new deployment of `public/`. The site is served at `sonochrome.pages.dev`.
+- **The same from the terminal (optional):** `npm run deploy`, which runs `wrangler pages deploy public --project-name sonochrome --branch splinter`. It needs `npx wrangler@4.166.0 login` once.
 - **Deploy on push (optional, later):** connect the GitHub repo to the Pages project, with an empty build command and output directory `public`.
 - **Routing:** the player uses the hash (`play.html#pi`), so there's no SPA fallback and no rewrite rules.
 - **Third-party code:** VexFlow and gmp-wasm stay on jsDelivr at pinned versions, as in the prototype. Copying them into `public/vendor/` (about 1.3 MB) is an option, so the site keeps working if the CDN is blocked.
@@ -94,10 +96,10 @@ export default {
 ### 1. Skeleton + first deploy
 - Add `README.md`, `.gitignore`, the license, `package.json`, `public/_headers`, and the folder layout from Deployment.
 - `prototypes/` holds both HTML files unchanged, for reference and comparison tests.
-- `public/index.html` starts as a placeholder welcome page. Deploy it once (upload `public/` to the Pages project `chromatone`), so the pipeline is proven before any real code moves.
+- `public/index.html` starts as a placeholder welcome page. Deploy it once (upload `public/` to the Pages project `sonochrome`), so the pipeline is proven before any real code moves.
 
 ### 2. Source interface + two unlike sources
-Nothing in Chromatone is built around one series. This piece proves the interface with two sources of different kinds from the start:
+Nothing in Sonochrome is built around one series. This piece proves the interface with two sources of different kinds from the start:
 - **π (base 10):** a constant computed from position 0 in a worker. It's needed for the parity tests against the prototype. The prototype's `computePi` / `chudnovsky` / `chudnovskyGmp` / worker code moves behind `prepare()`.
 - **Thue–Morse:** a formula series with instant random access and nothing to prepare.
 - Generic naming throughout: `seq`, `source`, `symbols`. No `PI` or "digits of pi" outside `sources/pi.js`.
