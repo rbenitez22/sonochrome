@@ -3,7 +3,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { SOURCES, sourceById } from '../public/src/sources/index.js';
-import { machin, chudnovsky } from '../public/src/sources/pi.js';
+import { machin } from '../public/src/sources/pi.js';
+import { chudnovsky } from '../public/src/sources/engines.js';
 import { thueMorse } from '../public/src/sources/thue-morse.js';
 
 // The prototype's own computePi(n), lifted out of prototypes/pi-notes.html.

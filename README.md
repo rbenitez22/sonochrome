@@ -74,7 +74,19 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 | `pi` (π) | digit, base 10, up to 20,000,000 | Computed from position 0. Up to 20,000 digits use Machin's formula on the page. Beyond that, the Chudnovsky series runs in `workers/digits.js`, on GMP (gmp-wasm 1.3.2 ESM from jsDelivr) or on BigInt if GMP can't load (Firefox's BigInt stops at about 157k digits). A longer request recomputes from 0, and the longest result is cached. Background requests (`allowInline: false`) always use the worker, however short. Without Worker support (or in Node) it computes on the calling thread. |
 | `thue-morse` | digit, base 2 | A formula (the parity of the 1 bits in n), so any position is instant and `prepare` does nothing. |
 
-**The digits worker** (`workers/digits.js`) takes `{ constant, count }` and replies with `{ p, l }` progress, then `{ done, engine }` or `{ error, engine }`. Sources call it through `computeConstant(constant, count, { inline, report, signal, allowInline })` in `sources/constant-worker.js`. A new constant adds its BigInt and GMP engines to `ENGINES` in the worker.
+**Engines** (`sources/engines.js`): for each constant id (`pi`, `e`, `sqrt2`, `phi`, `ln2`), `ENGINES[id]` has `bigint(n, report, base)` and `gmp(binding, n, report, base)`. Both return ⌊x · baseⁿ⌋ written in that base, so π is `'314159…'` in base 10 and `'3243f6a8…'` in base 16. There is no leading `0` when x < 1.
+
+| Constant | Method |
+|---|---|
+| π | Chudnovsky, binary splitting |
+| e | Σ 1/k!, binary splitting |
+| √2 | integer square root of 2·base²ⁿ |
+| φ | (baseⁿ + ⌊√(5·base²ⁿ)⌋) / 2 |
+| ln 2 | 18·atanh(1/26) − 2·atanh(1/4801) + 8·atanh(1/8749), each by binary splitting |
+
+The BigInt versions agree with separate simple series, and with exact squaring for √2 and φ, for 2,000 digits in bases 2, 3, 7, 10, 12 and 16 (`tests/engines.test.js`). GMP matches BigInt exactly up to 300,000 digits in the browser.
+
+**The digits worker** (`workers/digits.js`) takes `{ constant, count, base }` and replies with `{ p, l }` progress, then `{ done, engine }` or `{ error, engine }`. Sources call it through `computeConstant(constant, count, { base, inline, report, signal, allowInline })` in `sources/constant-worker.js`. A new constant adds its two engines to `ENGINES` in `sources/engines.js`.
 
 **Start positions** (`sources/position.js`): `parseStart('250k')` → `250000` (accepts `4M`, `1.5k`, `4,000,000`; `null` if it isn't a number), and `randomStart(max, rnd = Math.random)` → a uniform integer in `[0, max]`. The caller passes the limit, normally from the source's `maxLength`.
 

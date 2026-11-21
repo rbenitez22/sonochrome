@@ -28,7 +28,7 @@ function computeInline(count, inline, report, signal) {
   });
 }
 
-function computeInWorker(constant, count, inline, report, signal, allowInline) {
+function computeInWorker(constant, count, base, inline, report, signal, allowInline) {
   return new Promise((resolve, reject) => {
     let settled = false, gotProgress = false, worker;
     try { worker = new Worker(WORKER_URL, { type: 'module' }); }
@@ -59,17 +59,17 @@ function computeInWorker(constant, count, inline, report, signal, allowInline) {
       signal?.removeEventListener('abort', onAbort);
       computeInline(count, inline, report, signal).then(resolve, reject);
     };
-    worker.postMessage({ constant, count });
+    worker.postMessage({ constant, count, base });
   });
 }
 
-/* Compute `count` digit characters of `constant` (a name the worker knows, e.g. 'pi').
+/* Compute ⌊x · base^count⌋ of `constant` (an id in ENGINES, e.g. 'pi') as digits in that base.
    report(p, label) receives progress 0..1. `inline(count)` is the same computation on this thread,
    used when workers are unavailable and allowInline is true. Resolves with the digit string. */
-export function computeConstant(constant, count, { inline, report = () => {}, signal, allowInline = true } = {}) {
+export function computeConstant(constant, count, { base = 10, inline, report = () => {}, signal, allowInline = true } = {}) {
   if (signal?.aborted) return Promise.reject(abortError());
   if (typeof Worker === 'undefined') {
     return allowInline ? computeInline(count, inline, report, signal) : Promise.reject(new Error('background tasks are not available'));
   }
-  return computeInWorker(constant, count, inline, report, signal, allowInline);
+  return computeInWorker(constant, count, base, inline, report, signal, allowInline);
 }
