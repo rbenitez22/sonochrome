@@ -141,7 +141,17 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
 
 ## Player
 
-`public/play.html` is the music player, at parity with the Pi Notes prototype's layout and controls. It opens the source named in the hash (`play.html#thue-morse`), or the first source if the hash names none. Until the welcome page lists the series (piece 5), a **Series** select in Options switches between them.
+`public/play.html` is the music player, at parity with the Pi Notes prototype's layout and controls. It opens the source named by the route in the hash, and an unknown or missing id sends the browser back to the welcome page.
+
+**Routes** (`app/route.js`): `#<source id>`, with optional `?key=value` source params for later sources (`#pi?base=12` in piece 7). Values stay strings; each source converts its own.
+
+```js
+parseRoute('#pi?base=12');        // { id: 'pi', params: { base: '12' } }
+formatRoute('pi', { base: 12 });  // '#pi?base=12'
+playerHref('thue-morse');         // 'play.html#thue-morse'
+```
+
+Changing the hash switches series in place, so browser Back and Forward move between series.
 
 - **Sources shape the controls:**
   - Start presets and random ranges beyond the source's `maxLength` are hidden. π stops at 19,999,999, so its 20M preset is hidden.
@@ -164,7 +174,7 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
 **Parity with the prototype** (checked in Chromium and Firefox on 2026-11-21):
 - For 72 settings (every scheme and code length, 1 or 3 voices, Notes/Time/Infinite, two starts), the chips match `prototypes/pi-notes.html` exactly, including the pending "press Play to compute" state.
 - The status lines and the score agree, and pinned codes survive Firefox's form restore the same way.
-- **Deliberate differences:** the heading and Series select, "position" in the start label, and the hidden 20M preset (π's last position is 19,999,999).
+- **Deliberate differences:** the heading, "position" in the start label, and the hidden 20M preset (π's last position is 19,999,999).
 
 Modules behind the page, each with one job:
 

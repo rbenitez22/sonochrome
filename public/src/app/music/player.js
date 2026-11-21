@@ -1,8 +1,9 @@
 /* The music player page: wires the source, its supply, the controls, the views and the transport.
-   The source comes from the hash (play.html#thue-morse); a Series select sets it until the welcome
-   page takes over (piece 5). */
-import { $, fmtN, fillSelect } from '../dom.js';
-import { SOURCES, sourceById } from '../../sources/index.js';
+   The source and its params come from the route in the hash (play.html#thue-morse, see route.js);
+   an unknown source sends the browser back to the welcome page. */
+import { $, fmtN } from '../dom.js';
+import { sourceById } from '../../sources/index.js';
+import { parseRoute } from '../route.js';
 import { createSupply } from '../supply.js';
 import { showProgress, hideProgress } from '../progress.js';
 import { fmtTime } from '../../mappings/music/timing.js';
@@ -39,7 +40,13 @@ let lastOn = [], sched = [], playedBeats = 0, lastPlayed = null;
 // The beat the score and roll follow (where playback is, or stopped), and the score width drawn last.
 let sheetBeat = 0, lastW = 0;
 
-const sourceFromHash = () => sourceById(decodeURIComponent(location.hash.slice(1))) ?? SOURCES[0];
+// The routed source and params, or null (after sending the browser to the welcome page) when unknown.
+function routedSource() {
+  const { id, params } = parseRoute(location.hash);
+  const source = sourceById(id);
+  if (!source) { location.replace('index.html'); return null; }
+  return { source, params };
+}
 // Beats played so far in the current run (live while playing).
 const beatsPlayed = () => (playing ? Math.max(0, elapsed() / secondsPerBeat()) : playedBeats);
 
@@ -346,15 +353,15 @@ function recolor() {
 
 // ---- the source ----
 
-async function useSource(next) {
+async function useSource(route) {
+  if (!route) return;
   if (playing) stop();
   supply?.cancel();
   supply?.stopRefill();
-  source = next;
-  supply = createSupply(source);
+  source = route.source;
+  supply = createSupply(source, route.params);
   document.title = source.name + ' · Sonochrome';
   $('seriesName').textContent = source.name;
-  $('series').value = source.id;
   $('bar').setAttribute('aria-label', 'Computing digits of ' + source.name);
   setSource(source, await supply.ready(1));
   await refresh();
@@ -362,9 +369,7 @@ async function useSource(next) {
 
 // ---- setup ----
 
-fillSelect($('series'), SOURCES.map((s) => [s.id, s.name]));
-$('series').addEventListener('change', () => { location.hash = $('series').value; });
-window.addEventListener('hashchange', () => useSource(sourceFromHash()));
+window.addEventListener('hashchange', () => useSource(routedSource()));
 $('play').addEventListener('click', play);
 $('cancel').addEventListener('click', () => {
   supply.cancel();
@@ -380,6 +385,6 @@ window.addEventListener('resize', onResize);
 try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor); } catch (e) {}
 new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 initTabs(onTabShown);
-await useSource(sourceFromHash());
+await useSource(routedSource());
 lastW = $('sheet').clientWidth;
 restoreTab();
