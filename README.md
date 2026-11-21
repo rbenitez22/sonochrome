@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). The site is still a placeholder welcome page; the music player page comes next.
+**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). Piece 4, the music player page (`plans/music-player.md`), is under way: step 4a (the piece state and the symbol supply) is done. The site is still a placeholder welcome page.
 
 ## Layout
 
@@ -19,6 +19,7 @@ public/          the deployed site: only this folder is served
   src/sources/   one ES module per series, plus the shared seq helpers (see Sources)
   src/workers/   digits.js: module Web Worker that computes constants from position 0
   src/mappings/music/   symbols → notes (pure, no DOM; see Music mappings)
+  src/app/       the pages' code: supply.js (symbols for the page), music/ (the player; see Player)
 tests/           node --test (no dependencies)
 prototypes/      the two original HTML apps, for reference and equivalence tests
 plans/           design plans, one per feature
@@ -27,7 +28,7 @@ wrangler.jsonc   Cloudflare config
 
 Planned under `public/src/` (see `plans/foundation.md`):
 - `mappings/color/`: symbols → colours (pure, tested).
-- `app/`: pages, audio and views.
+- `app/music/`: the player's views and audio, and `app/color/` later.
 
 ## Sources
 
@@ -41,6 +42,8 @@ export default {
   kind: 'digit',               // 'digit' (symbols 0..base-1) or 'int' (unbounded integers; none yet)
   params: [],                  // user-facing settings, e.g. { id, label, choices, default }
   maxLength: Number.MAX_SAFE_INTEGER,
+  quickLength: Number.MAX_SAFE_INTEGER,  // optional: positions prepare() gives without a noticeable wait
+  estimateSeconds(upTo) { return 2 },   // optional: rough compute time, for the "about N sec" hint
   async prepare(params, upTo, report, options) { return seq },
 };
 ```
@@ -48,6 +51,8 @@ export default {
 - **`prepare(params, upTo, report = () => {}, { signal, allowInline } = {})`** makes positions `[0, upTo)` available and resolves with a **seq**. `report(p, label)` receives progress from 0 to 1.
   - `signal` (an `AbortSignal`) cancels a running computation; the promise rejects with an `AbortError`.
   - `allowInline: false` makes it fail rather than compute on the page when Web Workers are unavailable (for background refills that must not freeze playback).
+- **`quickLength`** (optional, default 0) is how far the player prepares as settings change; past it, the user presses Play to compute. π: 20,000. Thue–Morse: all of it.
+- **`estimateSeconds(upTo)`** (optional) is a rough compute time on a laptop. Only π has one.
 - **A seq** is `{ length, base, at(i), slice(i, j) }`.
   - `length` may exceed `upTo`; `base` is the alphabet size of a digit source, or `null` for integer sources.
   - `at(i)` returns a number and throws a `RangeError` outside `0..length-1`.
@@ -131,6 +136,43 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
 - **Equivalence with the prototype:** on π, every module's output is identical to the Pi Notes prototype's for the same settings. That covers the 11,520-case Notes grid, streaming bar by bar, bars and 48 MusicXML scores.
 - **Every source:** `tests/music-sources.test.js` runs the whole core (Notes mode, streaming, regeneration, bars, MusicXML) on every source in `SOURCES`, with every scheme that accepts it. It checks what must hold for any series: notes come out, beats add up, events point back at their symbols, and the score is sound (`tests/musicxml-checks.js`).
 - **No π in the core:** the same file fails if anything in `mappings/music/` mentions π.
+
+## Player
+
+`public/src/app/` holds the code behind the pages. Piece 4 builds the music player on it (`plans/music-player.md`); so far it has the two modules without DOM access:
+
+**`app/supply.js`**: `createSupply(source, params)` holds the seq a page reads from, and gets more of it.
+
+| Member | What it does |
+|---|---|
+| `seq` | The longest seq so far, or `null` before the first one. |
+| `ready(need)` | Resolves with the seq if it reaches `need`, or prepares it now when `need ≤ quickLength`. Otherwise resolves `null`: the page shows "press Play to compute". |
+| `compute(need, report)` | The foreground computation before playback, with `report(p, label)` progress. It stops a running refill. |
+| `cancel()` | Stops `compute`, which rejects with an `AbortError`. |
+| `refill(target)` | A background computation while playing. It never computes on the page, and runs one at a time and never during `compute`. It resolves `true` when the seq grew. After a failure, refills stay off until `resetRefill()`. |
+| `computing`, `refilling`, `refillFailed`, `estimateSeconds(need)`, `stopRefill()` | State and helpers. |
+
+Every request is capped at the source's `maxLength`, and a shorter result never replaces a longer seq.
+
+```js
+const supply = createSupply(sourceById('pi'));
+const seq = (await supply.ready(5_000)) ?? (await supply.compute(5_000_000, (p, label) => show(p, label)));
+```
+
+**`app/music/piece.js`**: the piece being shown and played, as plain data: `{ s, overrides, octs, voices, stream, totalBeats, nextPos }`.
+- **Settings:** `s` holds the voice settings plus `count`, `start`, `mode` (`'notes'`, `'time'` or `'infinite'`), `durSec` and `bpm`.
+- **Building:**
+  - `notesPiece(s, seq, overrides, octs)` builds the whole piece.
+  - `streamPiece(…)` starts a stream with an 8-bar preview, and `fillStream(piece, seq, untilBeat)` adds bars while playing. It returns the new events per voice, for appending chips.
+  - When the seq runs short, `stream.out` is set; clear it once more symbols arrive.
+- **Dropping played events:** `trimPlayed(piece, beat, keepFrom)` drops events that ended more than 64 beats ago. It returns their indices, so their chips can be removed.
+  - Indices stay logical: `eventAt(piece, k, i)` finds event `i` of voice `k` even after earlier ones were dropped.
+- **Export and history:**
+  - `exportEvents(piece, seq, beatsPlayed)` gives the full event lists for MusicXML: the whole piece for Time, the bars played so far for Infinite.
+  - `playedRange(piece, beat)` → `{ start, end }` is what a playback used; `symbolSpan(start, evs)` gives the same range for any event lists.
+- **Sizing and refills:**
+  - `symbolsFor(s, nv)` is the position the seq must reach before playing, and `limitBeats(s)` is the length in beats.
+  - `refillTarget(piece, have, ceiling)` returns the position to refill up to when fewer than 300 s of symbols are left (fetching 1200 s more), or `0`.
 
 ## Requirements
 

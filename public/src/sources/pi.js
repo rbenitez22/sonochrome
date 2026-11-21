@@ -141,6 +141,9 @@ export default {
   kind: 'digit',
   params: [],
   maxLength: MAX_LENGTH,
+  quickLength: ON_PAGE_LIMIT,
+  // Rough seconds on a laptop to compute up to `upTo` (longer on a phone).
+  estimateSeconds(upTo) { return Math.max(1, Math.round(2 * Math.pow(upTo / 1e6, 1.1))); },
   // options: { signal } cancels a worker computation; { allowInline: false } fails instead of
   // computing on the page when workers are unavailable (for background refills).
   async prepare(params, upTo, report = () => {}, { signal, allowInline = true } = {}) {

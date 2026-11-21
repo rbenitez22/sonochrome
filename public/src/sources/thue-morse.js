@@ -19,5 +19,6 @@ export default {
   kind: 'digit',
   params: [],
   maxLength: LENGTH,
+  quickLength: LENGTH,
   async prepare() { return seq; },
 };
