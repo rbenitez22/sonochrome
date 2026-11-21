@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–2 of `plans/foundation.md` are done: the skeleton and deploy, then the source interface with two sources (π and Thue–Morse). Piece 3, the music core as modules (`plans/music-core.md`), is under way: steps 3a (theory, schemes, reader), 3b (voices, streaming, timing) and 3c (bars, MusicXML) are done. The site is still a placeholder welcome page.
+**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). The site is still a placeholder welcome page; the music player page comes next.
 
 ## Layout
 
@@ -70,7 +70,7 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 
 **Start positions** (`sources/position.js`): `parseStart('250k')` → `250000` (accepts `4M`, `1.5k`, `4,000,000`; `null` if it isn't a number), and `randomStart(max, rnd = Math.random)` → a uniform integer in `[0, max]`. The caller passes the limit, normally from the source's `maxLength`.
 
-**Adding a source:** write `sources/<id>.js` with the default export above, add it to `SOURCES`, and add tests: a known prefix (OEIS for integer series) plus the shared `slice`/`at` check in `tests/sources.test.js`.
+**Adding a source:** write `sources/<id>.js` with the default export above, add it to `SOURCES`, and add tests: a known prefix (OEIS for integer series) plus the shared `slice`/`at` check in `tests/sources.test.js`. `tests/music-sources.test.js` then runs the music core on it automatically.
 
 ## Music mappings
 
@@ -127,7 +127,10 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
   parts: bars.map((b, k) => ({ name: 'Voice ' + (k + 1), program: 1, clef: chooseClef(voices[k], 'auto'), bars: b })) });
 ```
 
-Still to come in piece 3: a run of the whole core on Thue–Morse, to show it has no π assumptions (3d).
+**Tests** (`tests/music-*.test.js`):
+- **Equivalence with the prototype:** on π, every module's output is identical to the Pi Notes prototype's for the same settings. That covers the 11,520-case Notes grid, streaming bar by bar, bars and 48 MusicXML scores.
+- **Every source:** `tests/music-sources.test.js` runs the whole core (Notes mode, streaming, regeneration, bars, MusicXML) on every source in `SOURCES`, with every scheme that accepts it. It checks what must hold for any series: notes come out, beats add up, events point back at their symbols, and the score is sound (`tests/musicxml-checks.js`).
+- **No π in the core:** the same file fails if anything in `mappings/music/` mentions π.
 
 ## Requirements
 
@@ -166,7 +169,7 @@ Still to come in piece 3: a run of the whole core on Thue–Morse, to show it ha
 See `plans/foundation.md`:
 1. Skeleton and first deploy (done)
 2. The source interface, with two unlike sources (π and Thue–Morse) (done)
-3. The music core as modules, for any source, with output identical to the Pi Notes prototype when fed π
+3. The music core as modules, for any source, with output identical to the Pi Notes prototype when fed π (done)
 4. The music player page
 5. The welcome page and routing
 6. The Colour tab
