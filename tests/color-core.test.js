@@ -129,3 +129,17 @@ test('fitSize shrinks height first, then width, to fit before the limit', () => 
   assert.ok(symbolsNeeded(19_990_000, w, h, 7) <= 20_000_000);
   assert.equal(symbolsNeeded(10, 4, 4, 9), 10 + 144);
 });
+
+test('canvas size: pixels per cell stay within 16,000 px a side and 4096² px in area', async () => {
+  const { cellPixels, MAX_CANVAS_SIDE, MAX_CANVAS_AREA } = await import('../public/src/app/color/canvas.js');
+  assert.equal(cellPixels(16, 16, 20), 20, 'small images keep their pixel size');
+  assert.equal(cellPixels(300, 300, 20), 13, '300×300 at 20 px would be 36M pixels');
+  assert.equal(cellPixels(300, 1, 200), 53, 'a long strip is held by the side limit');
+  assert.equal(cellPixels(300, 300, 1), 1);
+  for (const [w, h] of [[300, 300], [300, 1], [1, 300], [100, 100], [40, 30], [7, 3]]) for (const px of [1, 13, 50, 200]) {
+    const e = cellPixels(w, h, px);
+    assert.ok(e >= 1 && e <= px);
+    assert.ok(w * e <= MAX_CANVAS_SIDE && h * e <= MAX_CANVAS_SIDE, `side ${w}×${h} at ${px}`);
+    assert.ok(w * h * e * e <= MAX_CANVAS_AREA, `area ${w}×${h} at ${px}`);
+  }
+});

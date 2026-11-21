@@ -42,10 +42,11 @@ async function refresh() {
   pendingNeed = 0;
   $('compute').hidden = true;
   image = { ...buildCells(seq, start, fit.w, fit.h, s.mode, s.order), w: fit.w, h: fit.h, start, mode: s.mode };
-  drawCells(image, s.px);
+  const eff = drawCells(image, s.px);
   const cv = $('cv'), used = fit.w * fit.h * s.mode.dpc;
   status(`${fit.w}×${fit.h} cells · ${used} ${unitWords(source)} used (positions ${start}–${start + used - 1}) · canvas ${cv.width}×${cv.height}px` +
-    (fit.reduced ? ` (size reduced to fit the available ${unitWords(source)})` : ''));
+    (fit.reduced ? ` (size reduced to fit the available ${unitWords(source)})` : '') +
+    (eff < s.px ? ` (pixel size reduced to ${eff} to stay within the browser's canvas limit)` : ''));
   showDigitsUsed(seq, start, need);
   showColorList(image, s.format);
   refreshPills();

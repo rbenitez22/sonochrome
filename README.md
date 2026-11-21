@@ -271,7 +271,7 @@ Modules behind the page, each with one job:
 | `app/play.js` | The page entry: follows the route, creates the source's supply, fills the Series panel, runs foreground computes (`page.compute(need)`, with progress and Cancel), and switches views. Each view implements `{ name, computeVerb, setSource(source, supply, probe), refresh(), show(), hide(), status(text) }`. |
 | `app/color/view.js` | The Colour view, `createColorView(page)`: rebuilds the image, Compute when pending, the inspector, copy and PNG |
 | `app/color/controls.js` | The Colour and Image forms: `initColorControls({ onChange, onFormatChange })`, `readImageSettings()` → `{ mode, order, format, w, h, px }` (clamped: up to 300×300 cells, 200 px), `setModesFor(source, probe)`, `refreshPills()` |
-| `app/color/canvas.js` | `drawCells(image, px)` (within the browser's 16,000-pixel canvas limit), `clearCanvas()`, `cellAt(event, image)` |
+| `app/color/canvas.js` | `drawCells(image, px)`, `clearCanvas()`, `cellAt(event, image)`, `cellPixels(w, h, px)`. The pixels per cell are lowered when needed, so the canvas stays within 16,000 px a side and 4096 × 4096 px in area. That area limit is Safari's on iPhone and iPad, which otherwise draws a blank canvas; the same cap applies in every browser. The status line says when it applies (300×300 cells at 20 px → 13 px). |
 | `app/color/lists.js` | `showReadout(hit, format)`, `showDigitsUsed(seq, start, end)` (up to 600 symbols), `showColorList(image, format)` (first 40) |
 | `app/color/export.js` | `copyColors(image, format)` (all cells, in fill order), `downloadPng(name)` → `<source>-<start>-<mode>-<w>x<h>.png` |
 | `app/views.js` | The Music \| Colour tabs: `initViewTabs(onPick)` (ARIA tabs pattern), `showViewParts(name)` |
