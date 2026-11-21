@@ -52,8 +52,9 @@ test('schemes declare which seqs they accept', () => {
   assert.deepEqual({ ...tm, codes: true }, { codes: true, degrees: true, pairs: true, steps: true });
   const base12 = { base: 12 }, ints = { base: null };
   for (const sc of SCHEMES) {
-    assert.equal(typeof sc.accepts(base12), 'string', sc.id);
     assert.equal(typeof sc.accepts(ints), 'string', sc.id);
+    if (sc.id === 'degrees') assert.equal(sc.accepts(base12), true, 'degrees reads any digit base');
+    else assert.equal(typeof sc.accepts(base12), 'string', sc.id);
   }
 });
 

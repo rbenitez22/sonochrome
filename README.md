@@ -71,8 +71,15 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 
 | Source | Kind | Cost |
 |---|---|---|
-| `pi` (π) | digit, base 10, up to 20,000,000 | Computed from position 0. Up to 20,000 digits use Machin's formula on the page. Beyond that, the Chudnovsky series runs in `workers/digits.js`, on GMP (gmp-wasm 1.3.2 ESM from jsDelivr) or on BigInt if GMP can't load (Firefox's BigInt stops at about 157k digits). A longer request recomputes from 0, and the longest result is cached. Background requests (`allowInline: false`) always use the worker, however short. Without Worker support (or in Node) it computes on the calling thread. |
+| `pi` (π), `e`, `sqrt2` (√2), `phi` (φ), `ln2` (ln 2) | digit, in base 2, 3, 4, 5, 6, 7, 8, 10, 12 or 16 (param `base`, default 10), up to 20,000,000 digits | Built by `makeConstant` in `sources/constant.js`, and computed from position 0. Up to 20,000 digits are computed on the page with the BigInt engine; π in base 10 uses Machin's formula there, exactly as in the prototype. Beyond that, the digits worker computes them with GMP (gmp-wasm 1.3.2 ESM from jsDelivr), or with BigInt if GMP can't load (Firefox's BigInt stops at about 157k decimal digits). One digit string is cached per base. A longer request recomputes from 0 and keeps the longest. Background requests (`allowInline: false`) always use the worker, however short. Position 0 is the first digit of the integer part, so ln 2 starts `0693…`. |
 | `thue-morse` | digit, base 2 | A formula (the parity of the 1 bits in n), so any position is instant and `prepare` does nothing. |
+
+**Constants** (`sources/constant.js`): `makeConstant({ id, name, glyph, blurb, quick })` builds a source from an `ENGINES` id. `readBase(params)` turns `{ base: '12' }` into 12; a missing base, or one not in `BASES`, means 10.
+
+```js
+const seq = await sourceById('e').prepare({ base: '12' }, 1000);   // e in base 12: 2.875236069821…
+seq.base;   // 12
+```
 
 **Engines** (`sources/engines.js`): for each constant id (`pi`, `e`, `sqrt2`, `phi`, `ln2`), `ENGINES[id]` has `bigint(n, report, base)` and `gmp(binding, n, report, base)`. Both return ⌊x · baseⁿ⌋ written in that base, so π is `'314159…'` in base 10 and `'3243f6a8…'` in base 16. There is no leading `0` when x < 1.
 
@@ -115,7 +122,11 @@ readEvent(s, seq, {}, rd); // { rest: false, midi: 65, beats: 1, at: 0, symbols:
 ```
 
 - **An event** is `{ rest, midi, beats, at, symbols, label }`, plus `pinned: true` when a pinned code supplied it. `at` is the position of its first symbol. `symbols` holds one character per symbol (`0-9`, then `a-z`); for base 10 these are the digits themselves, which is what pinned-code keys match.
-- **Which seqs a scheme reads:** `accepts(seq)` returns `true` or a reason string. `codes` needs base 10, since its rules (`÷9`, `mod 7`) are tuned for decimal. `degrees`, `pairs` and `steps` read any digit series up to base 10 (Thue–Morse included), because they index 10-entry tables. Larger bases and integer series come in pieces 7–8.
+- **Which seqs a scheme reads:** `accepts(seq)` returns `true` or a reason string.
+  - `codes` needs base 10, since its rules (`÷9`, `mod 7`) are tuned for decimal.
+  - `degrees` reads any digit base. In base 12 with the Chromatic scale, each digit is one semitone.
+  - `pairs` and `steps` read bases up to 10, because they index 10-entry tables.
+  - Integer series come in piece 8.
 
 - **Voices:** `octs` lists one octave per voice, voice 1 first. Voice settings add `start` (the first position read) and, for Notes mode, `count` (voice 1's number of events).
   - **Notes mode:** voice 1 plays `count` events. Each later voice reads the symbols after the previous one and fills the same number of beats, so its last note is cut to fit.

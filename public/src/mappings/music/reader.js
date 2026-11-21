@@ -17,7 +17,7 @@ export function readEvent(s, seq, overrides, rd) {
   const d = symbolString(seq.slice(rd.pos, rd.pos + chunk));
   const at = rd.pos;
   rd.pos += chunk;
-  const e = decodeChunk(s, d, overrides, rd);
+  const e = decodeChunk(s, d, overrides, rd, seq.base ?? 10);
   e.at = at;
   e.symbols = d;
   e.label = e.rest ? 'rest' : midiName(e.midi);
