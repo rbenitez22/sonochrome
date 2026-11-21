@@ -30,10 +30,11 @@ export function setField(page, id, value) {
   }, String(value));
 }
 
-// Open the player at a route ("pi", "e/color?base=12") and wait for its view to be built.
+// Open the player at a route ("pi", "e/color?base=12") and wait for its view to be built. (Attached,
+// not visible: with the Sheet music tab open, the chips exist but are hidden.)
 export async function openPlayer(page, route) {
   await page.goto(PLAYER + '#' + route);
-  await page.waitForSelector(route.includes('/color') ? '#list div' : '.chip');
+  await page.waitForSelector(route.includes('/color') ? '#list div' : '.chip', { state: 'attached' });
 }
 
 // The route's hash, as the address bar shows it.

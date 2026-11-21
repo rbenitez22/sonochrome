@@ -1,0 +1,98 @@
+// The music views: piano roll, sheet music, the remembered tab, MusicXML downloads, fitted score rows.
+import { readFileSync } from 'node:fs';
+import { test, expect, openPlayer, setField } from './fixtures.js';
+import { assertWellFormed } from '../musicxml-checks.js';
+
+// Every measure of every part sums to 16 divisions (4/4 at four divisions a quarter).
+const fullBars = (xml) => [...xml.matchAll(/<measure number="\d+">([\s\S]*?)<\/measure>/g)]
+  .every((m) => [...m[1].matchAll(/<duration>(\d+)<\/duration>/g)].reduce((t, d) => t + +d[1], 0) === 16);
+
+async function save(page) {
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('#dlXml')]);
+  const xml = readFileSync(await download.path(), 'utf8');
+  assertWellFormed(xml);
+  expect(fullBars(xml)).toBe(true);
+  return { name: download.suggestedFilename(), xml };
+}
+
+test('the piano roll draws the piece', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  await page.click('#tab-roll');
+  const inked = await page.$eval('#roll', (cv) => {
+    const d = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height).data;
+    let n = 0;
+    for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++;
+    return n;
+  });
+  expect(inked).toBeGreaterThan(1000);
+});
+
+test('the score draws, redraws for a new clef, highlights while playing, and its tab is remembered', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  await page.click('#tab-sheet');
+  await page.waitForSelector('#sheet svg');
+  await expect(page.locator('#sheet svg .vf-stavenote')).toHaveCount(29);
+  await expect(page.locator('#clef')).toBeVisible();
+  const before = await page.$('#sheet svg');
+  await page.selectOption('#clef', 'bass');
+  await expect.poll(() => before.evaluate((e) => e.isConnected)).toBe(false);
+  await page.click('#play');
+  await expect(page.locator('#sheet svg .on').first()).toBeAttached();
+  await page.click('#play');
+  await page.reload();
+  await page.waitForSelector('#sheet svg');
+  await expect(page.locator('#tab-sheet')).toHaveAttribute('aria-selected', 'true');
+});
+
+test('@slow while streaming, the score turns to the next page at bar 9', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  await setField(page, 'lenMode', 'infinite');
+  await setField(page, 'scheme', 'degrees');
+  await setField(page, 'fixedLen', 0.5);
+  await page.$eval('#tempo', (el) => { el.value = 200; el.dispatchEvent(new Event('input')); el.dispatchEvent(new Event('change')); });
+  await page.click('#tab-sheet');
+  const page1 = await page.waitForSelector('#sheet svg');
+  await page.click('#play');
+  await expect.poll(() => page1.evaluate((e) => e.isConnected), { timeout: 20_000, intervals: [500] }).toBe(false);
+  await expect(page.locator('#sheet svg .on').first()).toBeAttached();
+  await page.click('#play');
+});
+
+test('MusicXML downloads for Notes, Time, Infinite (after playing) and another series', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  await page.click('#tab-sheet');
+  expect((await save(page)).name).toBe('pi-0-95.musicxml');
+  await setField(page, 'lenMode', 'time');
+  await setField(page, 'duration', '0:20');
+  const time = await save(page);
+  expect(time.name).toBe('pi-0-155.musicxml');
+  expect(time.xml).toContain('<movement-title>Sonochrome: digits 0–155</movement-title>');
+  await setField(page, 'lenMode', 'infinite');
+  await expect(page.locator('#dlXml')).toBeDisabled();
+  await page.click('#play');
+  await expect(page.locator('#dlXml')).toBeEnabled();
+  await page.waitForTimeout(1500);
+  await page.click('#play');
+  expect((await save(page)).name).toMatch(/^pi-0-\d+\.musicxml$/);
+  await openPlayer(page, 'thue-morse');
+  await setField(page, 'lenMode', 'notes');
+  expect((await save(page)).name).toBe('thue-morse-0-23.musicxml');
+});
+
+test('score rows fit their notes: nothing is clipped, however low or high', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  await page.click('#tab-sheet');
+  await page.waitForSelector('#sheet svg');
+  const outside = () => page.evaluate(() => {
+    const svg = document.querySelector('#sheet svg'), H = +svg.getAttribute('height');
+    return [...svg.querySelectorAll('.vf-stavenote')].map((n) => n.getBBox()).filter((b) => b.y < 0 || b.y + b.height > H).length;
+  });
+  for (const [id, v] of [['scheme', 'degrees'], ['range', 2], ['oct0', 2], ['clef', 'treble']]) await setField(page, id, v);
+  await page.waitForTimeout(300);
+  expect(await outside()).toBe(0);
+  await setField(page, 'nv', 3);
+  for (const [id, v] of [['oct0', 5], ['oct1', 1], ['oct2', 2], ['range', 3], ['count', 64]]) await setField(page, id, v);
+  await page.waitForTimeout(500);
+  await expect(page.locator('#sheet svg .vf-stavenote')).toHaveCount(192);
+  expect(await outside()).toBe(0);
+});

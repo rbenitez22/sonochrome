@@ -323,6 +323,10 @@ const seq = (await supply.ready(5_000)) ?? (await supply.compute(5_000_000, (p, 
 |---|---|
 | `welcome.spec.js` | The nine cards in order with their previews (terms comma-separated); Hear it / See it open the right view; All series comes back |
 | `routes.spec.js` | Unknown or missing sources go to the welcome page; views in the hash, the tabs, Back; arrow keys on the tabs; switching series in place; `?base=` with Back; the shared start position |
+| `music-parity.spec.js` | @slow: 72 settings (every scheme and code length, 1 or 3 voices, every length mode, two starts) give the same chips and status as `prototypes/pi-notes.html`; pinned codes behave the same across a reload |
+| `playback.spec.js` | Notes ends and highlights (@slow); Time stops on time and replays (@slow); Infinite drops old chips (@slow); random each play; the tempo stops playback; a due refill starts the digits worker (needs GMP) |
+| `refill.spec.js` | Fake sources registered in the page: a slow refill makes the music wait and resume; a failing one ends playback where the music ends |
+| `music-views.spec.js` | The roll draws; the score draws, redraws for a clef, highlights, and its tab is remembered; page turns at bar 9 (@slow); MusicXML downloads in every mode are well formed with full bars; score rows fit their notes |
 
 ## Requirements
 
