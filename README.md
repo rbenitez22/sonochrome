@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–2 of `plans/foundation.md` are done: the skeleton and deploy, then the source interface with two sources (π and Thue–Morse). The site is still a placeholder welcome page; the music core and player come next.
+**Status:** pieces 1–2 of `plans/foundation.md` are done: the skeleton and deploy, then the source interface with two sources (π and Thue–Morse). Piece 3, the music core as modules (`plans/music-core.md`), is under way: step 3a (theory, schemes, reader) is done. The site is still a placeholder welcome page.
 
 ## Layout
 
@@ -18,6 +18,7 @@ public/          the deployed site: only this folder is served
   _headers       response headers for Cloudflare
   src/sources/   one ES module per series, plus the shared seq helpers (see Sources)
   src/workers/   digits.js: module Web Worker that computes constants from position 0
+  src/mappings/music/   symbols → notes (pure, no DOM; see Music mappings)
 tests/           node --test (no dependencies)
 prototypes/      the two original HTML apps, for reference and equivalence tests
 plans/           design plans, one per feature
@@ -25,7 +26,7 @@ wrangler.jsonc   Cloudflare config
 ```
 
 Planned under `public/src/` (see `plans/foundation.md`):
-- `mappings/`: symbols → music events and symbols → colours (pure, tested).
+- `mappings/color/`: symbols → colours (pure, tested).
 - `app/`: pages, audio and views.
 
 ## Sources
@@ -67,7 +68,32 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 
 **The digits worker** (`workers/digits.js`) takes `{ constant, count }` and replies with `{ p, l }` progress, then `{ done, engine }` or `{ error, engine }`. Sources call it through `computeConstant(constant, count, { inline, report, signal, allowInline })` in `sources/constant-worker.js`. A new constant adds its BigInt and GMP engines to `ENGINES` in the worker.
 
+**Start positions** (`sources/position.js`): `parseStart('250k')` → `250000` (accepts `4M`, `1.5k`, `4,000,000`; `null` if it isn't a number), and `randomStart(max, rnd = Math.random)` → a uniform integer in `[0, max]`. The caller passes the limit, normally from the source's `maxLength`.
+
 **Adding a source:** write `sources/<id>.js` with the default export above, add it to `SOURCES`, and add tests: a known prefix (OEIS for integer series) plus the shared `slice`/`at` check in `tests/sources.test.js`.
+
+## Music mappings
+
+`public/src/mappings/music/` turns any seq into notes. These modules are moved from the `// <pure>` section of `prototypes/pi-notes.html`, and tests check that their output on π is identical to the prototype's (`tests/music-equivalence.js` loads the prototype in a `vm` context for this). Settings for one voice are `s = { scheme, codeLen, fixedLen, range, root, scale, oct }`.
+
+| Module | Exports |
+|---|---|
+| `theory.js` | `NAMES` (flat spellings), `SCALES` (name → semitones), `midiName(60)` → `'C4'`, `noteToMidi('Bb3')` → `58` (or `null`), `fmtLen(1.5)` → `'3/8'`, `quant(b)` (snap beats to the sixteenth grid) |
+| `overrides.js` | `parseOverrides(text, codeLen)` → `{ map, errors }`: pinned codes such as `2635 = Bb3 1/4` or `1459 = rest`, for the `codes` scheme |
+| `schemes.js` | `SCHEMES` (`{ id, label, accepts(seq) }`), `chunkSize(s)`, `decodeChunk(s, chunk, overrides, rd)`, `symbolsPerBeat(s)`, and the tables `PAIR_LEN`, `CODE_LEN`, `STEPS` |
+| `reader.js` | `newReader(s, pos)` → `{ pos, cur }`, `readEvent(s, seq, overrides, rd)` → an event or `null` when the seq is too short, `symbolString(values)` |
+
+```js
+import { newReader, readEvent } from './src/mappings/music/reader.js';
+const s = { scheme: 'degrees', codeLen: 4, fixedLen: 1, range: 2, root: 0, scale: 'Major', oct: 4 };
+const rd = newReader(s, 0);
+readEvent(s, seq, {}, rd); // { rest: false, midi: 65, beats: 1, at: 0, symbols: '3', label: 'F4' }
+```
+
+- **An event** is `{ rest, midi, beats, at, symbols, label }`, plus `pinned: true` when a pinned code supplied it. `at` is the position of its first symbol. `symbols` holds one character per symbol (`0-9`, then `a-z`); for base 10 these are the digits themselves, which is what pinned-code keys match.
+- **Which seqs a scheme reads:** `accepts(seq)` returns `true` or a reason string. `codes` needs base 10, since its rules (`÷9`, `mod 7`) are tuned for decimal. `degrees`, `pairs` and `steps` read any digit series up to base 10 (Thue–Morse included), because they index 10-entry tables. Larger bases and integer series come in pieces 7–8.
+
+Still to come in piece 3: voices and streaming (`voices.js`, `timing.js`), then bars and MusicXML (`measures.js`, `musicxml.js`).
 
 ## Requirements
 
