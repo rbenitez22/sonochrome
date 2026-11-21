@@ -1,6 +1,0 @@
-// Cloudflare Worker with static assets: everything under ./public is served as-is, nothing else is deployed.
-{
-  "name": "chromatone",
-  "compatibility_date": "2026-11-01",
-  "assets": { "directory": "./public" }
-}

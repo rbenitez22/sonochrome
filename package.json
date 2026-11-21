@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test 'tests/**/*.test.js'",
-    "dev": "npx wrangler@4.166.0 dev",
-    "deploy": "npx wrangler@4.166.0 deploy"
+    "dev": "python3 -m http.server 8000 -d public",
+    "deploy": "npx wrangler@4.166.0 pages deploy public --project-name chromatone"
   }
 }

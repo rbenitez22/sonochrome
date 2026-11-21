@@ -17,7 +17,6 @@ public/          the deployed site: only this folder is served
 tests/           node --test (no dependencies)
 prototypes/      the two original HTML apps, for reference and equivalence tests
 plans/           design plans, one per feature
-wrangler.jsonc   Cloudflare config
 ```
 
 Planned under `public/src/` (see `plans/foundation.md`):
@@ -27,30 +26,25 @@ Planned under `public/src/` (see `plans/foundation.md`):
 
 ## Requirements
 
-- **Node 22+:** for `npm test` and for running wrangler through `npx`. There are no npm dependencies; wrangler is fetched by `npx` at a pinned version (4.166.0) when you deploy.
-- **A Cloudflare account:** only to deploy. Run `npx wrangler@4.166.0 login` once.
+- **Node 22+:** only for `npm test`. There are no npm dependencies.
+- **Deploying:** a Cloudflare account with a Pages project named `chromatone`. The optional terminal deploy fetches wrangler through `npx` at a pinned version (4.166.0) and needs `npx wrangler@4.166.0 login` once.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `npm test` | Runs every `tests/**/*.test.js` with Node's built-in test runner. |
-| `npm run dev` | Serves `public/` locally the way Cloudflare will (`wrangler dev`, http://localhost:8787). |
-| `npm run deploy` | Deploys `public/` to Cloudflare as the Worker `chromatone` (`wrangler deploy`). The site is served at `https://chromatone.<your-subdomain>.workers.dev`. |
-
-Any static server also works for development, e.g. `python3 -m http.server -d public`. The pages are plain HTML and ES modules with no build step.
+| `npm run dev` | Serves `public/` at http://localhost:8000 (Python's built-in server). Any static server works; there's no build step. |
+| `npm run deploy` | Optional: uploads `public/` to the Pages project `chromatone` (`wrangler pages deploy`), the same as uploading it in the dashboard. |
 
 ## Deployment
 
-`wrangler.jsonc` sets up a **Cloudflare Worker with static assets**:
+The site is deployed to **Cloudflare Pages** the same way as pi-notes: by uploading a folder, with no build step.
 
-```jsonc
-{ "name": "chromatone", "compatibility_date": "2026-11-01", "assets": { "directory": "./public" } }
-```
-
-- **Deploy on push:** in the Cloudflare dashboard, connect the GitHub repo (Workers Builds) with no build command. Pushes to `splinter` then deploy automatically.
-- **A custom domain** can be added in the dashboard (Workers → chromatone → Domains).
-- **Response headers** (`public/_headers`):
+- **The folder is `public/`.** In the dashboard: Workers & Pages → the `chromatone` Pages project (create it with "Upload assets" the first time) → new deployment → upload `public/`. The site is served at `https://chromatone.pages.dev`.
+- **From the terminal**, `npm run deploy` does the same upload.
+- **Deploy on push** is possible later: connect the GitHub repo to the Pages project, with an empty build command and output directory `public`.
+- **Response headers** (`public/_headers`, which Pages reads):
   - `nosniff` and a referrer policy.
   - No long caching, because file names aren't content-hashed; browsers revalidate after each deploy.
 - **Keep only site files in `public/`.** `tests/site.test.js` checks that the plans, tests and prototypes stay out of it.

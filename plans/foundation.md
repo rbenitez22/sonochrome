@@ -9,7 +9,7 @@ The goal: a **welcome page** where the user picks a **series**, and then hears i
 
 ## Decisions (confirmed 2026-11-21)
 
-The user chose plain JS modules, Workers static assets and the MIT license. Series-first flow and a fresh history were kept as proposed.
+The user chose plain JS modules, Cloudflare Pages (deployed like pi-notes) and the MIT license. Series-first flow and a fresh history were kept as proposed.
 
 
 1. **Stack: plain JavaScript ES modules, no build step**, served as static files from Cloudflare (see Deployment). Tests use `node --test`.
@@ -18,42 +18,35 @@ The user chose plain JS modules, Workers static assets and the MIT license. Seri
    - Alternative: start in Leptos now and call VexFlow and gmp-wasm through JS interop.
 2. **Flow: series first, then Music | Colour tabs.** The welcome page lists the series as cards. Picking one opens a single player page (`play.html#pi`), where the source settings, start position and played-range tracking are shared by both tabs.
 3. **History: a fresh repo.** The first commit notes where the code came from (pi-notes `a51e4e5`). The alternative is to import pi-notes' history with `git subtree`.
-4. **Cloudflare service: Workers with static assets** (`wrangler.jsonc`), named `chromatone` (first planned as `pi-notes`; renamed 2026-11-21 because Chromatone is not about any one series). Pages would need the same folder layout, configured in the dashboard instead.
+4. **Cloudflare service: Pages, project `chromatone`**, deployed by uploading `public/`, the same way as pi-notes. Workers static assets were the first proposal; see Deployment.
 5. **License:** none in pi-notes today. gmp-wasm is LGPL-3.0 and is loaded unmodified from a CDN, so any license works. MIT is the simple choice, but it's your call.
 
-## Deployment (Cloudflare, Worker name `chromatone`)
+## Deployment (Cloudflare Pages, project `chromatone`, the same way as pi-notes)
 
-The site is entirely static: no server code and no build step. Everything the browser loads lives under `public/`, and nothing else is deployed.
+The site is entirely static: no server code and no build step. Everything the browser loads lives under `public/`, and **`public/` is the folder that gets uploaded**. Nothing else is deployed.
 
 ```
 chromatone/
-  public/                  ← the deployed site (assets directory)
+  public/                  ← the folder uploaded to Cloudflare Pages
     index.html             welcome page
     play.html              player (Music | Colour tabs)
     src/sources/*.js       ES modules, loaded directly by the browser
     src/mappings/…
     src/app/…
     src/workers/digits.js  Web Worker for constants (module worker, a real file instead of today's Blob)
-    _headers               cache rules (long cache for /src/*, short for *.html)
+    _headers               response headers (Pages reads this file)
   tests/                   node --test; imports ../public/src/…
   prototypes/              the two original HTML files (reference only)
   plans/
-  wrangler.jsonc
   package.json             "type": "module"; scripts: test, dev, deploy
 ```
 
-- **`wrangler.jsonc`** (Workers with static assets, the setup Cloudflare now recommends for static sites):
-  ```jsonc
-  { "name": "chromatone", "compatibility_date": "2026-11-01", "assets": { "directory": "./public" } }
-  ```
-  - **Local preview:** `npx wrangler dev`.
-  - **Deploy from your machine:** `npx wrangler deploy`.
-  - **Deploy on push:** connect the GitHub repo in the Cloudflare dashboard (Workers Builds) with no build command, so pushes to `splinter` deploy automatically.
-  - The site is served at `chromatone.<your-subdomain>.workers.dev`, and a custom domain can be added in the dashboard.
-- **Cloudflare Pages also works with the same layout.** Its settings would be: build command empty, output directory `public`, project name `chromatone`. Pick one service; the folder structure doesn't change.
+- **The pi-notes way (dashboard):** Workers & Pages → Create → Pages → upload assets. Project `chromatone`; drop the `public/` folder. To publish a new version, upload a new deployment of `public/`. The site is served at `chromatone.pages.dev`.
+- **The same from the terminal (optional):** `npm run deploy`, which runs `wrangler pages deploy public --project-name chromatone`. It needs `npx wrangler@4.166.0 login` once.
+- **Deploy on push (optional, later):** connect the GitHub repo to the Pages project, with an empty build command and output directory `public`.
 - **Routing:** the player uses the hash (`play.html#pi`), so there's no SPA fallback and no rewrite rules.
 - **Third-party code:** VexFlow and gmp-wasm stay on jsDelivr at pinned versions, as in the prototype. Copying them into `public/vendor/` (about 1.3 MB) is an option, so the site keeps working if the CDN is blocked.
-- **Wrangler itself:** a dev dependency, so `npm install` is needed only to deploy. `npm test` stays dependency-free.
+- **History:** this plan first used Workers static assets with a `wrangler.jsonc`. On 2026-11-21 it was switched to Pages direct upload to match how pi-notes is deployed.
 
 ## Architecture
 
@@ -99,9 +92,9 @@ export default {
 ## Pieces (each reviewable and committed on its own)
 
 ### 1. Skeleton + first deploy
-- Add `README.md`, `.gitignore`, the license, `package.json`, `wrangler.jsonc`, `public/_headers`, and the folder layout from Deployment.
+- Add `README.md`, `.gitignore`, the license, `package.json`, `public/_headers`, and the folder layout from Deployment.
 - `prototypes/` holds both HTML files unchanged, for reference and comparison tests.
-- `public/index.html` starts as a placeholder welcome page. Deploy it once (`npx wrangler deploy`), so the pipeline is proven before any real code moves.
+- `public/index.html` starts as a placeholder welcome page. Deploy it once (upload `public/` to the Pages project `chromatone`), so the pipeline is proven before any real code moves.
 
 ### 2. Source interface + two unlike sources
 Nothing in Chromatone is built around one series. This piece proves the interface with two sources of different kinds from the start:

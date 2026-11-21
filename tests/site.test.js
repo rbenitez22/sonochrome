@@ -1,4 +1,4 @@
-// Deploy layout: wrangler serves ./public, and the welcome page is there.
+// Deploy layout: public/ is the folder uploaded to Cloudflare Pages, and it holds only the site.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
@@ -6,10 +6,9 @@ import { readFileSync, existsSync } from 'node:fs';
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
 
-test('wrangler.jsonc deploys ./public as chromatone', () => {
-  const cfg = JSON.parse(read('wrangler.jsonc').replace(/^\s*\/\/.*$/gm, ''));
-  assert.equal(cfg.name, 'chromatone');
-  assert.equal(cfg.assets.directory, './public');
+test('the deploy script uploads public/ to the Pages project chromatone', () => {
+  const { scripts } = JSON.parse(read('package.json'));
+  assert.match(scripts.deploy, /pages deploy public --project-name chromatone$/);
 });
 
 test('public/ holds the welcome page and nothing from outside the site', () => {
