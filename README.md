@@ -21,6 +21,7 @@ public/          the deployed site: only this folder is served
   src/sources/   one ES module per series, plus the shared seq helpers (see Sources)
   src/workers/   digits.js: module Web Worker that computes constants from position 0
   src/mappings/music/   symbols → notes (pure, no DOM; see Music mappings)
+  src/mappings/color/   symbols → colours (pure, no DOM; see Colour mappings)
   src/app/       the pages' code: supply.js (symbols for the page), music/ (the player; see Player)
 tests/           node --test (no dependencies)
 prototypes/      the two original HTML apps, for reference and equivalence tests
@@ -29,7 +30,6 @@ wrangler.jsonc   Cloudflare config
 ```
 
 Planned under `public/src/` (see `plans/foundation.md`):
-- `mappings/color/`: symbols → colours (pure, tested).
 - `app/music/`: the player's views and audio, and `app/color/` later.
 
 ## Sources
@@ -139,6 +139,28 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
 - **Equivalence with the prototype:** on π, every module's output is identical to the Pi Notes prototype's for the same settings. That covers the 11,520-case Notes grid, streaming bar by bar, bars and 48 MusicXML scores.
 - **Every source:** `tests/music-sources.test.js` runs the whole core (Notes mode, streaming, regeneration, bars, MusicXML) on every source in `SOURCES`, with every scheme that accepts it. It checks what must hold for any series: notes come out, beats add up, events point back at their symbols, and the score is sound (`tests/musicxml-checks.js`).
 - **No π in the core:** the same file fails if anything in `mappings/music/` mentions π.
+
+## Colour mappings
+
+`public/src/mappings/color/` turns any seq into an image. The modules are moved from `prototypes/pi-color-generator.html`, and on π their cells are identical to the prototype's (`tests/color-core.test.js`).
+
+| Module | Exports |
+|---|---|
+| `modes.js` | `MODES` (`{ id, name, hint, dpc, accepts(seq), color(symbols, base) }`), `modeById(id)` |
+| `order.js` | `ORDERS` (`[kind, label]`), `cellOrder(w, h, kind)` → `[x, y]` per cell in fill order: `row`, `snake`, `col` or `spiral` |
+| `image.js` | `fitSize(w, h, dpc, start, limit)` → `{ w, h, reduced }`, `buildCells(seq, start, w, h, mode, orderKind)` → `{ cells, order }`, `symbolsNeeded(start, w, h, dpc)` |
+| `convert.js` | `formatColor(rgb, 'hex'\|'rgb'\|'hsl'\|'dec')`, `hexToRgb`, `hsl2rgb`, `rgb2hsl` |
+
+```js
+import { buildCells } from './src/mappings/color/image.js';
+import { modeById } from './src/mappings/color/modes.js';
+const { cells } = buildCells(seq, 0, 16, 16, modeById('rgb3'), 'spiral');
+cells[0]; // { start, symbols: '…', rgb: [r, g, b] } for the cell at (0, 0)
+```
+
+- **Any base:** RGB 9, RGB 6, grey and CMYK scale each n-symbol group by `base^n − 1`, which is exactly the prototype's 999 or 99 for base 10. The palette takes bases up to 10. HSL and hex literal are base-10 only, since they read decimal digits as they stand.
+  - Thue–Morse never repeats a block three times, so its RGB 9 levels run from 1/7 to 6/7 rather than 0 to 1.
+- **Spiral fix:** the prototype's spiral gave up after `8·w·h` steps, leaving cells out of long thin images (300×1). The limit now follows the longest side, and every order fills every cell exactly once (tested).
 
 ## Welcome page
 
