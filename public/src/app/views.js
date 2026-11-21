@@ -7,6 +7,7 @@ import { VIEWS } from './route.js';
 // Show the parts of view `name` and hide the others; mark its tab selected.
 export function showViewParts(name) {
   for (const el of document.querySelectorAll('[data-view]')) el.hidden = el.dataset.view !== name;
+  document.querySelector('main').dataset.activeView = name;   // the layout orders the cards per view
   for (const v of VIEWS) {
     const tab = $('view-' + v), on = v === name;
     tab.setAttribute('aria-selected', on);

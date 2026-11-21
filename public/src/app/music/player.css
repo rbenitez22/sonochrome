@@ -34,8 +34,8 @@ html, body { margin: 0; }
 body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); }
 /* Page grid: title across the top, controls column on the left, music stage on the right.
    On desktop the page is exactly one screen tall; each column scrolls on its own. */
-main { max-width: 1280px; height: 100vh; margin: 0 auto; padding: 20px 16px 16px; display: grid; gap: 16px;
-  grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
+main { max-width: 1440px; height: 100vh; margin: 0 auto; padding: 20px 16px 16px; display: grid; gap: 16px;
+  grid-template-columns: 440px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
   grid-template-areas: "top top" "controls stage"; }
 .masthead { grid-area: top; }
 /* Controls column: Scheme and Sound stacked; scrolls when taller than the screen. */
@@ -66,14 +66,6 @@ main { max-width: 1280px; height: 100vh; margin: 0 auto; padding: 20px 16px 16px
   .music-card .sheet { max-height: 75vh; }
 }
 
-/* Header panel: [ Options | Play + info ]. */
-.head-panel { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
-.head-play { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
-.head-options { border-right: 1px solid var(--line); padding-right: 16px; min-width: 0; }
-@media (max-width: 599px) {
-  .head-panel { grid-template-columns: minmax(0, 1fr); }
-  .head-options { border-right: 0; padding-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
-}
 h1 { font: 700 34px/1.05 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
 h1 span { color: var(--accent); }
 .sub { margin: 6px 0 0; color: var(--muted); max-width: 52ch; }
@@ -157,9 +149,35 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .back:hover { text-decoration: underline; }
 .back:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; border-radius: 4px; }
 .series-blurb { margin: 6px 0 12px; font-size: 14px; color: var(--muted); }
-/* Playback panel (right): the Length row above Play. */
-.head-play { justify-content: flex-start; }
-.head-play .length-row { margin-bottom: 14px; }
+/* Playback card: the Length row above Play. */
+.playback-card .length-row { margin-bottom: 14px; }
+
+/* Card order in the left column, per view (main[data-active-view]): Music puts the Series and Playback
+   first, so Play is in view; Colour puts its options first, then the Series and Image cards. */
+.controls > .series-panel { order: 1; }
+.controls > .playback-card { order: 2; }
+.controls > .scheme-card { order: 3; }
+.controls > .sound-card { order: 4; }
+main[data-active-view="color"] .controls > .color-options { order: 1; }
+main[data-active-view="color"] .controls > .series-panel { order: 2; }
+main[data-active-view="color"] .controls > .image-card { order: 3; }
+
+/* Phones and narrow windows: one column. The left column and the stage are flattened so their cards
+   interleave: what is needed to start first, then the view, then the rest. */
+@media (max-width: 899px) {
+  main { display: flex; flex-direction: column; }
+  .controls, .stage { display: contents; }
+  /* Same specificity as the desktop rules above, so these win on narrow screens. */
+  .masthead { order: 0; }
+  main[data-active-view] .controls > .series-panel { order: 1; }
+  main[data-active-view] .controls > .playback-card { order: 2; }
+  main[data-active-view] .stage > .music-card { order: 3; }
+  main[data-active-view] .controls > .scheme-card { order: 4; }
+  main[data-active-view] .controls > .sound-card { order: 5; }
+  main[data-active-view="color"] .controls > .color-options { order: 2; }
+  main[data-active-view="color"] .controls > .image-card { order: 3; }
+  main[data-active-view="color"] .stage > .color-card { order: 4; }
+}
 /* View tabs (Music | Colour) under the page heading. */
 .view-tabs { display: flex; gap: 6px; margin-top: 12px; }
 .view-tabs button { font: 700 15px/1 var(--display); color: var(--muted); background: transparent; border: 1px solid var(--line);

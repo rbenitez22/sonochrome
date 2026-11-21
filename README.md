@@ -199,38 +199,19 @@ Changing the hash switches series or view in place, so browser Back and Forward 
 
 **Views:** **Music | Colour** tabs under the heading switch the page between views. Every element of one view carries `data-view="music"` or `data-view="color"`, and only the active view's are shown. Switching to Colour stops playback, and each view keeps its own settings.
 
-**Layout:** the head panel pairs the **Series panel** (left, shared by both views) with the active view's panel (right). On phones they stack.
-- **Series panel:**
+**Layout** (`plans/wide-layout.md`): the page is up to 1440 px wide. A 440 px left column holds every settings card, and the right column holds the active view's card at full height, so a Colour image or the music views are fully in view.
+- **Left column, top to bottom:**
+  - **Music:** Series, Playback (Length, Play, status), Scheme, Sound.
+  - **Colour:** Colour (mode, fill order, readout format), Series, Image (size and pixel size with presets, Copy colors, Download PNG, status).
+- **Series card** (shared by both views):
   - the series name, its description and a "← All series" link;
   - the start position, with presets and random start;
   - the progress bar and Cancel, when a view needs digits computed first.
-- **Music:**
-  - **Playback** (right): Length (Notes/Time/Infinite, with its count or duration), Play and the status line.
-  - **Below:** the music views, with Scheme and Sound in the left column.
-- **Colour:**
-  - **Left column:** the **Colour** card, with the mode and its hint, the fill order and the readout format.
-  - **Right of the head panel:** the **Image** panel, with the size W×H, pixel size, their preset pills, Copy colors, Download PNG and the status.
-  - **Result card:** the canvas, the hover/tap readout, "Digits used" and "First 40 colors".
+- **Card order** is CSS `order`, keyed on `main[data-active-view]`, which `showViewParts` sets. No elements move.
+- **Phones (under 900 px):** everything is one column: Series, Playback or the Colour options and Image, then the view, then the rest.
+- **Colour view behaviour:**
   - The image is rebuilt on every change. Past `quickLength`, a **Compute** button computes first, and an image that would read past `maxLength` shrinks to fit.
   - Modes a source refuses are disabled, with the reason (HSL and hex literal on Thue–Morse).
-
-- **Sources shape the controls:**
-  - Start presets and random ranges beyond the source's `maxLength` are hidden. π stops at 19,999,999, so its 20M preset is hidden.
-  - Schemes the source refuses are disabled, with the reason as a tooltip. If the current one is refused, the page picks the first allowed scheme.
-- **Within `quickLength`,** changing a setting rebuilds the piece straight away. Past it, the page says "press Play to compute", with the source's time estimate. Play then computes with a progress bar and a Cancel button.
-- **Playback** works as in the prototype:
-  - **Notes mode** plays the whole piece once.
-  - **Time** plays for the chosen length, and **Infinite** plays until Stop. Both generate bars about 48 beats ahead and drop chips more than 64 beats behind.
-  - Play can re-randomise the start each time, and moving the tempo slider stops playback.
-- **Refills:** while a stream plays, a background refill computes more digits once fewer than 300 s are left, and never on the page.
-  - If the music catches up with a running refill, the clock pauses ("waiting for more digits…") and resumes when the refill lands.
-  - With no refill possible, playback ends where the generated music ends ("Stopped: no more computed digits").
-- **After stopping,** the status shows the positions played. The player keeps a record of them, with the source, params and settings, for a future history store.
-- **Views:** Digits → notes (chips), Piano roll (canvas), and Sheet music (VexFlow 4.2.5 from jsDelivr, global `Vex`), one at a time. The page remembers the open tab.
-  - **While streaming,** the roll shows a 32-beat window and the score an 8-bar page that turns with the playhead.
-  - **Highlighting:** the playing notes light up in every view.
-  - **Clef:** Automatic picks bass for low voices; Treble and Bass apply to every voice.
-- **Download MusicXML** saves `<source id>-<start>-<end>.musicxml`, titled with the source's name and subtitled `Sonochrome: digits A–B`. Notes and Time save the whole piece; Infinite saves the bars played so far, so its button waits for Play.
 
 **Colour parity with `prototypes/pi-color-generator.html`** (Chromium and Firefox, 2026-11-21): 112 settings (7 modes × 4 orders × 2 sizes × 2 starts) give identical colour lists, "Digits used" text and canvas pixels, and the readout matches. The differences are deliberate:
 - the start position comes from the Series panel;
