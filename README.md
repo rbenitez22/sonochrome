@@ -23,7 +23,7 @@ public/          the deployed site: only this folder is served
   src/mappings/music/   symbols → notes (pure, no DOM; see Music mappings)
   src/mappings/color/   symbols → colours (pure, no DOM; see Colour mappings)
   src/app/       the pages' code: supply.js (symbols for the page), music/ (the player; see Player)
-tests/           node --test (no dependencies)
+tests/           node --test unit tests (*.test.js); tests/browser/ holds the Playwright browser tests (*.spec.js)
 prototypes/      the two original HTML apps, for reference and equivalence tests
 plans/           design plans, one per feature
 wrangler.jsonc   Cloudflare config
@@ -312,16 +312,31 @@ const seq = (await supply.ready(5_000)) ?? (await supply.compute(5_000_000, (p, 
   - `symbolsFor(s, nv)` is the position the seq must reach before playing, and `limitBeats(s)` is the length in beats.
   - `refillTarget(piece, have, ceiling)` returns the position to refill up to when fewer than 300 s of symbols are left (fetching 1200 s more), or `0`.
 
+## Browser tests
+
+`tests/browser/` turns the checks made by hand while building each piece into a Playwright suite (`plans/browser-tests.md`).
+- **The fixture** (`fixtures.js`) fails any test whose page throws or logs a console error. The one exception is Firefox's report of web-font downloads cancelled by a navigation.
+- **Helpers:** `setField(page, id, value)` sets a field and fires the event the page listens for, and `openPlayer(page, route)` opens the player and waits for its view.
+- **Browsers:** Chromium runs with `--autoplay-policy=no-user-gesture-required` and Firefox with `media.autoplay.default: 0`, so audio plays without a click.
+
+| Spec | Covers |
+|---|---|
+| `welcome.spec.js` | The nine cards in order with their previews (terms comma-separated); Hear it / See it open the right view; All series comes back |
+| `routes.spec.js` | Unknown or missing sources go to the welcome page; views in the hash, the tabs, Back; arrow keys on the tabs; switching series in place; `?base=` with Back; the shared start position |
+
 ## Requirements
 
-- **Node 22+:** for `npm test`, and for running wrangler through `npx`. There are no npm dependencies; wrangler is fetched by `npx` at a pinned version (4.166.0).
+- **Node 22+:** for the tests, and for running wrangler through `npx` (fetched at a pinned version, 4.166.0).
+- **For the browser tests only:** one dev dependency, `@playwright/test` 1.64.1. Run `npm install` once, then `npx playwright install chromium firefox` if this machine has no Playwright browsers yet. The site itself has no build step and no runtime dependencies.
 - **A Cloudflare account:** only to deploy. Run `npx wrangler@4.166.0 login` once.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `npm test` | Runs every `tests/**/*.test.js` with Node's built-in test runner. |
+| `npm test` | Runs every `tests/**/*.test.js` with Node's built-in test runner (unit tests, about 4 s). |
+| `npm run test:browser` | Runs the Playwright browser tests (`tests/browser/*.spec.js`) in Chromium and Firefox. They serve the repo root with `tests/browser/serve.mjs`, so they can open the site and the prototypes side by side. They need a network connection, because VexFlow, gmp-wasm and the fonts come from CDNs. |
+| `npm run test:browser:quick` | The same, skipping the tests tagged `@slow` (real-time playback, the full prototype comparisons). |
 | `npm run dev` | Serves `public/` locally the way Cloudflare does (`wrangler dev`, http://localhost:8787). Any static server also works, since there's no build step. |
 | `npm run deploy` | Deploys `public/` to the Cloudflare Worker `sonochrome` (`wrangler deploy`). |
 

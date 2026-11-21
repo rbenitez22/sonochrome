@@ -7,7 +7,12 @@
   "type": "module",
   "scripts": {
     "test": "node --test 'tests/**/*.test.js'",
+    "test:browser": "playwright test",
+    "test:browser:quick": "playwright test --grep-invert @slow",
     "dev": "npx wrangler@4.166.0 dev",
     "deploy": "npx wrangler@4.166.0 deploy"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
   }
 }
