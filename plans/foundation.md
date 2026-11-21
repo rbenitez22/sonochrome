@@ -141,7 +141,7 @@ Nothing in Sonochrome is built around one series. This piece proves the interfac
 
 ### 9. Later (not in this plan)
 - Kolakoski, Stern's diatomic, Collatz paths, Rule 30 (also as a 2D image), primes, Champernowne and continued fractions.
-- Key signatures, MIDI export, the played-range history store, and the Leptos port.
+- Key signatures (done), MIDI export (done), the played-range history store ([issue #1](https://github.com/rbenitez22/sonochrome/issues/1)), and the Leptos port.
 
 ## Open points
 
