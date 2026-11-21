@@ -8,13 +8,13 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–5 of `plans/foundation.md` are done. That covers the skeleton and deploy, the source interface (π and Thue–Morse), the music core, the music player at parity with the Pi Notes prototype, and the welcome page with routing (`plans/music-core.md`, `plans/music-player.md`, `plans/welcome-and-routing.md`). Next is piece 6, the Colour tab.
+**Status:** pieces 1–6 of `plans/foundation.md` are done. The player shows any series as **music** (at parity with the Pi Notes prototype) or **colour** (at parity with the Pi Color Generator), and the welcome page links to both views of each series. Plans: `plans/music-core.md`, `plans/music-player.md`, `plans/welcome-and-routing.md`, `plans/colour-tab.md`. Next is piece 7, more constants and number bases.
 
 ## Layout
 
 ```
 public/          the deployed site: only this folder is served
-  index.html     welcome page: one card per source, linking to its player
+  index.html     welcome page: one card per source, linking to its Music and Colour views
   play.html      the player: play.html#<source id>, e.g. play.html#thue-morse
   favicon.svg    the icon: π drawn as two beamed eighth notes (the bar is the beam, the legs the stems)
   _headers       response headers for Cloudflare
@@ -167,7 +167,7 @@ cells[0]; // { start, symbols: '…', rgb: [r, g, b] } for the cell at (0, 0)
 `public/index.html` lists every source in `SOURCES` as a card (`app/welcome.js`). Each card shows:
 - the source's `glyph` and its name (only announced, not shown, when the glyph is the name, as with π);
 - its blurb, and its first 32 symbols when it has them without a wait (`quickLength ≥ 32`);
-- the whole card links to `play.html#<id>` (`playerHref`), and the player's "← All series" link comes back.
+- **Hear it →** opens `play.html#<id>` (Music) and **See it →** opens `play.html#<id>/color` (Colour), both built with `playerHref`. The player's "← All series" link comes back.
 
 Without JavaScript the page shows direct links to the players instead.
 
@@ -332,7 +332,7 @@ See `plans/foundation.md`:
 3. The music core as modules, for any source, with output identical to the Pi Notes prototype when fed π (done)
 4. The music player page (done)
 5. The welcome page and routing (done)
-6. The Colour tab
+6. The Colour tab (done)
 7. Constants (e, √2, φ, ln 2) in any number base
 8. Integer series (Nørgård, Recamán, Fibonacci word)
 

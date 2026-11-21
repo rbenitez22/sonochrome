@@ -125,7 +125,7 @@ Nothing in Sonochrome is built around one series. This piece proves the interfac
 - `index.html` shows a card for each source built so far. `play.html#<source>?<params>` opens the player for that source.
 - The source settings card (start position, the source's params) moves out of the music controls so the Colour tab can share it.
 
-### 6. Colour tab
+### 6. Colour tab (done 2026-11-21; steps in `plans/colour-tab.md`)
 - The colour modes go into `src/mappings/color/*.js` (pure, with tests).
 - The canvas, fill orders, readout and inspector go into `src/app/color/*`, reading the same `seq` and start position.
 - Parity check against the Color Generator prototype.
