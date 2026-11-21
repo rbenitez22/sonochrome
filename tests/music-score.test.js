@@ -86,3 +86,20 @@ test('decompose, exportBeats and chooseClef', () => {
   assert.equal(chooseClef(ev(null), 'auto'), 'treble');
   assert.equal(XML_DIVISIONS, 4);
 });
+
+test('with a key, the MusicXML carries its signature and spells pitches in it', async () => {
+  const { keySignature } = await import('../public/src/mappings/music/keys.js');
+  const s = { scheme: 'degrees', codeLen: 4, fixedLen: 1, range: 2, root: 4, scale: 'Major', count: 32, start: 0 };   // E major
+  const { voices } = buildCountVoices(s, piSeq, {}, [4]);
+  const bars = padBars(voices.map((v) => toMeasures(v.events)));
+  const key = keySignature(4, 'Major');
+  const xml = toMusicXML({ ...scoreFor(bars, 0), key });
+  assert.match(xml, /<key><fifths>4<\/fifths><mode>major<\/mode><\/key>/);
+  assert.match(xml, /<step>G<\/step><alter>1<\/alter>/);
+  assert.doesNotMatch(xml, /<alter>-1<\/alter>/, 'no flats in E major');
+  assertMusicXML(xml, bars);
+  // G♭ major's C♭ sits in the octave of its letter: C♭5 is MIDI 71.
+  const gb = toMusicXML({ ...scoreFor([[[{ ei: 0, rest: false, midi: 71, beats: 4, tie: false }]]], 0), key: keySignature(6, 'Major') });
+  assert.match(gb, /<key><fifths>-6<\/fifths><mode>major<\/mode><\/key>/);
+  assert.match(gb, /<pitch><step>C<\/step><alter>-1<\/alter><octave>5<\/octave><\/pitch>/);
+});

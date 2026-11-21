@@ -118,7 +118,7 @@ The BigInt versions agree with separate simple series, and with exact squaring f
 | `reader.js` | `newReader(s, pos)` → `{ pos, cur }`, `readEvent(s, seq, overrides, rd)` → an event or `null` when the seq is too short, `symbolString(values)` |
 | `voices.js` | `buildCountVoices(s, seq, overrides, octs)` → `{ voices: [{ events, total }], nextPos }` (Notes mode); `newStream(s, octs)`, `buildBar(stream, seq, overrides, limit = Infinity)` → `{ events, barEnd, done }` or `null` (Time/Infinite); `regenerateVoices(s, seq, overrides, octs, limit)` |
 | `measures.js` | `toMeasures(events)` and `measuresInRange(events, fromBeat, toBeat, off = 0)` → bars of pieces `{ ei, rest, midi, beats, tie }`; `decompose(beats)`, `exportBeats(played)`, `chooseClef(events, 'auto'\|'treble'\|'bass')` |
-| `musicxml.js` | `toMusicXML(score)` → a MusicXML 4.0 string; `padBars(partsBars)`, `xmlEscape(text)`, `XML_DIVISIONS` (4 per quarter) |
+| `musicxml.js` | `toMusicXML(score)` → a MusicXML 4.0 string, with `score.key` (from `keySignature`) written as `<key><fifths>…</fifths><mode>…</mode></key>` and pitches spelled in it (without a key: C and flats, the prototype's output byte for byte); `padBars(partsBars)`, `xmlEscape(text)`, `XML_DIVISIONS` (4 per quarter) |
 | `timing.js` | `parseDuration('1:30')` → `90` (or `null`), `fmtTime(3723)` → `'1:02:03'`, `beatsForSeconds(sec, bpm)`, `streamSymbols(s, nv, beats)`, `symbolsNeeded(s, nv)`, `DURATION_MIN`/`DURATION_MAX` (5 s and 99:59) |
 
 ```js

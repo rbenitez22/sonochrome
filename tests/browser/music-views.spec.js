@@ -109,6 +109,9 @@ test('the score shows the key signature of the Key and Scale, and spells notes i
   const keyPaths = await page.$$eval('#sheet svg .vf-keysignature', (ks) => ks.map((k) => k.querySelectorAll('path').length).filter((n) => n > 0));
   expect(keyPaths.length).toBeGreaterThan(0);
   expect(keyPaths.every((n) => n === 4)).toBe(true);   // four sharps on every system
+  const { xml } = await save(page);
+  expect(xml).toContain('<key><fifths>4</fifths><mode>major</mode></key>');
+  expect(xml).toMatch(/<step>F<\/step><alter>1<\/alter>/);
   await page.selectOption('#keySig', 'none');
   await expect(page.locator('.chip .nt').nth(1)).toHaveText('Gb3');
   await expect.poll(notePaths).toBeGreaterThan(inKey);

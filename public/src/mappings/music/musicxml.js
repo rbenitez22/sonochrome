@@ -1,7 +1,11 @@
+// Without score.key: C, no mode, flats (the prototype's output).
+const NO_KEY = { fifths: 0, mode: null };
+
 /* ---- MusicXML export ----
-   score = { title, subtitle, bpm, parts: [{ name, program, clef: 'treble'|'bass', bars }] },
+   score = { title, subtitle, bpm, parts: [{ name, program, clef: 'treble'|'bass', bars }], key? },
+   key = { fifths, mode } from keySignature (optional: without it, C and flats as in the prototype),
    bars as from toMeasures()/measuresInRange(). One quarter = 4 divisions (sixteenth grid). */
-import { NAMES } from './theory.js';
+import { spell } from './keys.js';
 
 export const XML_DIVISIONS = 4;
 // beats -> [MusicXML note type, dots]
@@ -14,18 +18,19 @@ export function padBars(partsBars) {
   const n = Math.max(0, ...partsBars.map((b) => b.length));
   return partsBars.map((b) => b.concat(Array.from({ length: n - b.length }, () => [{ ei: -1, rest: true, midi: null, beats: 4, tie: false }])));
 }
-// MIDI number -> <pitch>, spelled with NAMES (flats), like the on-screen score.
-function pitchXML(midi) {
-  const name = NAMES[midi % 12];
-  return '<pitch><step>' + name[0] + '</step>' + (name.length > 1 ? '<alter>-1</alter>' : '') +
-    '<octave>' + (Math.floor(midi / 12) - 1) + '</octave></pitch>';
+// MIDI number -> <pitch>, spelled in the key with `fifths` sharps or flats, like the on-screen score
+// (with fifths 0: flats, as the prototype wrote them).
+function pitchXML(midi, fifths) {
+  const { step, alter, octave } = spell(midi, fifths);
+  return '<pitch><step>' + step + '</step>' + (alter ? '<alter>' + alter + '</alter>' : '') +
+    '<octave>' + octave + '</octave></pitch>';
 }
 // One bar piece -> <note>. tieStop: the previous piece of this part was tied into this one.
-function noteXML(p, tieStop, wholeBarRest) {
+function noteXML(p, tieStop, wholeBarRest, fifths) {
   const [type, dots] = XML_TYPES[p.beats];
   const ties = p.rest ? [] : [tieStop && 'stop', p.tie && 'start'].filter(Boolean);
   return '<note>' +
-    (p.rest ? (wholeBarRest ? '<rest measure="yes"/>' : '<rest/>') : pitchXML(p.midi)) +
+    (p.rest ? (wholeBarRest ? '<rest measure="yes"/>' : '<rest/>') : pitchXML(p.midi, fifths)) +
     '<duration>' + p.beats * XML_DIVISIONS + '</duration>' +
     ties.map((t) => '<tie type="' + t + '"/>').join('') +
     '<voice>1</voice>' +
@@ -34,20 +39,20 @@ function noteXML(p, tieStop, wholeBarRest) {
     '</note>';
 }
 // <attributes> and tempo mark for a part's first bar.
-function firstBarXML(part, bpm) {
+function firstBarXML(part, bpm, key) {
   const clef = part.clef === 'bass' ? '<sign>F</sign><line>4</line>' : '<sign>G</sign><line>2</line>';
-  return '<attributes><divisions>' + XML_DIVISIONS + '</divisions><key><fifths>0</fifths></key>' +
+  return '<attributes><divisions>' + XML_DIVISIONS + '</divisions><key><fifths>' + key.fifths + '</fifths>' + (key.mode ? '<mode>' + key.mode + '</mode>' : '') + '</key>' +
     '<time><beats>4</beats><beat-type>4</beat-type></time><clef>' + clef + '</clef></attributes>' +
     '<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>' + bpm +
     '</per-minute></metronome></direction-type><sound tempo="' + bpm + '"/></direction>';
 }
 // One part's bars -> <part>; tie state carries across barlines.
-function partXML(part, k, bpm) {
+function partXML(part, k, bpm, key) {
   let tied = false;
   const measures = part.bars.map((bar, i) => {
     const whole = bar.length === 1 && bar[0].rest && bar[0].beats === 4;
-    const notes = bar.map((p) => { const x = noteXML(p, tied, whole); if (!p.rest) tied = p.tie; return x; }).join('');
-    return '<measure number="' + (i + 1) + '">' + (i === 0 ? firstBarXML(part, bpm) : '') + notes + '</measure>';
+    const notes = bar.map((p) => { const x = noteXML(p, tied, whole, key.fifths); if (!p.rest) tied = p.tie; return x; }).join('');
+    return '<measure number="' + (i + 1) + '">' + (i === 0 ? firstBarXML(part, bpm, key) : '') + notes + '</measure>';
   });
   return '<part id="P' + (k + 1) + '">' + measures.join('\n') + '</part>';
 }
@@ -69,6 +74,6 @@ export function toMusicXML(score) {
     '<movement-title>' + xmlEscape(score.subtitle) + '</movement-title>\n' +
     '<identification><encoding><software>Sonochrome</software></encoding></identification>\n' +
     partListXML(score.parts) + '\n' +
-    score.parts.map((p, k) => partXML(p, k, score.bpm)).join('\n') + '\n' +
+    score.parts.map((p, k) => partXML(p, k, score.bpm, score.key ?? NO_KEY)).join('\n') + '\n' +
     '</score-partwise>\n';
 }

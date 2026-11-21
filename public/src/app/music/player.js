@@ -296,7 +296,7 @@ function onTabShown(name) {
 function saveMusicXML() {
   if (!piece) return;
   const saved = downloadMusicXML(piece, supply.seq, beatsPlayed(), {
-    sourceId: source.id, sourceName: source.name, units: unitWords(source), bpm: +$('tempo').value, clefSetting: clefSetting(),
+    sourceId: source.id, sourceName: source.name, units: unitWords(source), key: scoreKey(), bpm: +$('tempo').value, clefSetting: clefSetting(),
     parts: piece.voices.map((_, k) => ({ name: voiceLabel(k), program: GM_PROGRAM[instrumentOf(k)] || 1 })),
   });
   if (!saved) $('status').textContent = 'Could not rebuild the score: the ' + unitWords(source) + ' it needs are not computed.';

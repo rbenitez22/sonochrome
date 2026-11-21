@@ -18,11 +18,11 @@ export function updateDownload(piece, playing, playedBeats) {
 
 /* Per-voice event lists → the score object for toMusicXML. parts[k] = { name, program } for voice k;
    clefSetting is 'auto', 'treble' or 'bass'; units names the positions in the subtitle ('digits' or 'terms'). */
-export function collectScore(evs, { sourceName, units = 'digits', start, bpm, parts, clefSetting }) {
+export function collectScore(evs, { sourceName, units = 'digits', start, bpm, parts, clefSetting, key }) {
   const span = symbolSpan(start, evs);
   const bars = padBars(evs.map((list) => toMeasures(list)));
   return {
-    title: sourceName, subtitle: 'Sonochrome: ' + units + ' ' + fmtN(span.start) + '–' + fmtN(span.end), bpm,
+    key, title: sourceName, subtitle: 'Sonochrome: ' + units + ' ' + fmtN(span.start) + '–' + fmtN(span.end), bpm,
     start: span.start, end: span.end,
     parts: evs.map((list, k) => ({ ...parts[k], clef: chooseClef(list, clefSetting), bars: bars[k] })),
   };
