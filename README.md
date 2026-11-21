@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–2 of `plans/foundation.md` are done: the skeleton and deploy, then the source interface with two sources (π and Thue–Morse). Piece 3, the music core as modules (`plans/music-core.md`), is under way: step 3a (theory, schemes, reader) is done. The site is still a placeholder welcome page.
+**Status:** pieces 1–2 of `plans/foundation.md` are done: the skeleton and deploy, then the source interface with two sources (π and Thue–Morse). Piece 3, the music core as modules (`plans/music-core.md`), is under way: steps 3a (theory, schemes, reader) and 3b (voices, streaming, timing) are done. The site is still a placeholder welcome page.
 
 ## Layout
 
@@ -82,6 +82,8 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 | `overrides.js` | `parseOverrides(text, codeLen)` → `{ map, errors }`: pinned codes such as `2635 = Bb3 1/4` or `1459 = rest`, for the `codes` scheme |
 | `schemes.js` | `SCHEMES` (`{ id, label, accepts(seq) }`), `chunkSize(s)`, `decodeChunk(s, chunk, overrides, rd)`, `symbolsPerBeat(s)`, and the tables `PAIR_LEN`, `CODE_LEN`, `STEPS` |
 | `reader.js` | `newReader(s, pos)` → `{ pos, cur }`, `readEvent(s, seq, overrides, rd)` → an event or `null` when the seq is too short, `symbolString(values)` |
+| `voices.js` | `buildCountVoices(s, seq, overrides, octs)` → `{ voices: [{ events, total }], nextPos }` (Notes mode); `newStream(s, octs)`, `buildBar(stream, seq, overrides, limit = Infinity)` → `{ events, barEnd, done }` or `null` (Time/Infinite); `regenerateVoices(s, seq, overrides, octs, limit)` |
+| `timing.js` | `parseDuration('1:30')` → `90` (or `null`), `fmtTime(3723)` → `'1:02:03'`, `beatsForSeconds(sec, bpm)`, `streamSymbols(s, nv, beats)`, `symbolsNeeded(s, nv)`, `DURATION_MIN`/`DURATION_MAX` (5 s and 99:59) |
 
 ```js
 import { newReader, readEvent } from './src/mappings/music/reader.js';
@@ -93,7 +95,20 @@ readEvent(s, seq, {}, rd); // { rest: false, midi: 65, beats: 1, at: 0, symbols:
 - **An event** is `{ rest, midi, beats, at, symbols, label }`, plus `pinned: true` when a pinned code supplied it. `at` is the position of its first symbol. `symbols` holds one character per symbol (`0-9`, then `a-z`); for base 10 these are the digits themselves, which is what pinned-code keys match.
 - **Which seqs a scheme reads:** `accepts(seq)` returns `true` or a reason string. `codes` needs base 10, since its rules (`÷9`, `mod 7`) are tuned for decimal. `degrees`, `pairs` and `steps` read any digit series up to base 10 (Thue–Morse included), because they index 10-entry tables. Larger bases and integer series come in pieces 7–8.
 
-Still to come in piece 3: voices and streaming (`voices.js`, `timing.js`), then bars and MusicXML (`measures.js`, `musicxml.js`).
+- **Voices:** `octs` lists one octave per voice, voice 1 first. Voice settings add `start` (the first position read) and, for Notes mode, `count` (voice 1's number of events).
+  - **Notes mode:** voice 1 plays `count` events. Each later voice reads the symbols after the previous one and fills the same number of beats, so its last note is cut to fit.
+  - **Time/Infinite:** each `buildBar` call fills one 4/4 bar, voice by voice, from where the previous voice stopped reading. Notes may cross the barline, and only `limit` cuts one.
+  - **Short seqs:** when the seq is too short, `buildBar` returns `null` and leaves the stream unchanged, so it can be retried once `prepare` delivers more symbols.
+  - **Rebuilding:** `regenerateVoices` rebuilds a streamed piece identically, for export.
+- **Sizing:** `streamSymbols` is how many symbols past the start to have ready for `beats` of streaming, with 50% headroom. `symbolsNeeded` is the position a Notes-mode piece must reach.
+
+```js
+import { newStream, buildBar } from './src/mappings/music/voices.js';
+const st = newStream({ ...s, start: 0 }, [4, 3]);   // two voices, octaves 4 and 3
+const bar = buildBar(st, seq, {});                  // { events: [[…], […]], barEnd: 4, done: false }
+```
+
+Still to come in piece 3: bars and MusicXML (`measures.js`, `musicxml.js`).
 
 ## Requirements
 

@@ -42,3 +42,6 @@ export function renameDigits(e) {
   const { digits, ...rest } = e;
   return { ...rest, symbols: digits };
 }
+
+// Any prototype result (voices, streams, bars) as plain data, with every `digits` key renamed to `symbols`.
+export const fromPrototype = (x) => (x == null ? x : JSON.parse(JSON.stringify(x).replace(/"digits":/g, '"symbols":')));
