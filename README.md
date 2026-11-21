@@ -19,6 +19,7 @@ public/          the deployed site: only this folder is served
 tests/           node --test (no dependencies)
 prototypes/      the two original HTML apps, for reference and equivalence tests
 plans/           design plans, one per feature
+wrangler.jsonc   Cloudflare config
 ```
 
 Planned under `public/src/` (see `plans/foundation.md`):
@@ -28,28 +29,35 @@ Planned under `public/src/` (see `plans/foundation.md`):
 
 ## Requirements
 
-- **Node 22+:** only for `npm test`. There are no npm dependencies.
-- **Deploying:** a Cloudflare account with a Pages project named `sonochrome`. The optional terminal deploy fetches wrangler through `npx` at a pinned version (4.166.0) and needs `npx wrangler@4.166.0 login` once.
+- **Node 22+:** for `npm test`, and for running wrangler through `npx`. There are no npm dependencies; wrangler is fetched by `npx` at a pinned version (4.166.0).
+- **A Cloudflare account:** only to deploy. Run `npx wrangler@4.166.0 login` once.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
 | `npm test` | Runs every `tests/**/*.test.js` with Node's built-in test runner. |
-| `npm run dev` | Serves `public/` at http://localhost:8000 (Python's built-in server). Any static server works; there's no build step. |
-| `npm run deploy` | Optional: uploads `public/` to the Pages project `sonochrome` (`wrangler pages deploy`), the same as uploading it in the dashboard. |
+| `npm run dev` | Serves `public/` locally the way Cloudflare does (`wrangler dev`, http://localhost:8787). Any static server also works, since there's no build step. |
+| `npm run deploy` | Deploys `public/` to the Cloudflare Worker `sonochrome` (`wrangler deploy`). |
 
 ## Deployment
 
-The site is deployed to **Cloudflare Pages** the same way as pi-notes: by uploading a folder, with no build step.
+**Live:** https://sonochrome.rbenitez.workers.dev
 
-- **The folder is `public/`.** In the dashboard: Workers & Pages → the `sonochrome` Pages project (create it with "Upload assets" the first time) → new deployment → upload `public/`. The site is served at `https://sonochrome.pages.dev`.
-- **From the terminal**, `npm run deploy` does the same upload.
-- **Deploy on push** is possible later: connect the GitHub repo to the Pages project, with an empty build command and output directory `public`.
-- **Response headers** (`public/_headers`, which Pages reads):
+`wrangler.jsonc` sets up a **Cloudflare Worker with static assets**. It runs no server code; it just serves the files in `public/`:
+
+```jsonc
+{ "name": "sonochrome", "compatibility_date": "2026-11-01", "assets": { "directory": "./public" } }
+```
+
+- **Deploy:** `npm run deploy` uploads only the changed files and is live within seconds.
+- **Deploy on push (optional):** connect the GitHub repo to the Worker in the Cloudflare dashboard (Workers Builds), with no build command.
+- **A custom domain** can be added in the dashboard (Workers → sonochrome → Domains).
+- **Response headers** (`public/_headers`):
   - `nosniff` and a referrer policy.
   - No long caching, because file names aren't content-hashed; browsers revalidate after each deploy.
 - **Keep only site files in `public/`.** `tests/site.test.js` checks that the plans, tests and prototypes stay out of it.
+- **Why Workers, not Pages:** Cloudflare is folding Pages into Workers. Wrangler now steers new projects to Workers and recommends them.
 
 ## Planned work
 
