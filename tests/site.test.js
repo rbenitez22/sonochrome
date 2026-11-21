@@ -6,9 +6,9 @@ import { readFileSync, existsSync } from 'node:fs';
 const root = new URL('../', import.meta.url);
 const read = (p) => readFileSync(new URL(p, root), 'utf8');
 
-test('wrangler.jsonc deploys ./public as pi-notes', () => {
+test('wrangler.jsonc deploys ./public as chromatone', () => {
   const cfg = JSON.parse(read('wrangler.jsonc').replace(/^\s*\/\/.*$/gm, ''));
-  assert.equal(cfg.name, 'pi-notes');
+  assert.equal(cfg.name, 'chromatone');
   assert.equal(cfg.assets.directory, './public');
 });
 

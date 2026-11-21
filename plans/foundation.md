@@ -18,10 +18,10 @@ The user chose plain JS modules, Workers static assets and the MIT license. Seri
    - Alternative: start in Leptos now and call VexFlow and gmp-wasm through JS interop.
 2. **Flow: series first, then Music | Colour tabs.** The welcome page lists the series as cards. Picking one opens a single player page (`play.html#pi`), where the source settings, start position and played-range tracking are shared by both tabs.
 3. **History: a fresh repo.** The first commit notes where the code came from (pi-notes `a51e4e5`). The alternative is to import pi-notes' history with `git subtree`.
-4. **Cloudflare service: Workers with static assets** (`wrangler.jsonc`), named `pi-notes`. Pages would need the same folder layout, configured in the dashboard instead.
+4. **Cloudflare service: Workers with static assets** (`wrangler.jsonc`), named `chromatone` (first planned as `pi-notes`; renamed 2026-11-21 because Chromatone is not about any one series). Pages would need the same folder layout, configured in the dashboard instead.
 5. **License:** none in pi-notes today. gmp-wasm is LGPL-3.0 and is loaded unmodified from a CDN, so any license works. MIT is the simple choice, but it's your call.
 
-## Deployment (Cloudflare, project name `pi-notes`)
+## Deployment (Cloudflare, Worker name `chromatone`)
 
 The site is entirely static: no server code and no build step. Everything the browser loads lives under `public/`, and nothing else is deployed.
 
@@ -44,13 +44,13 @@ chromatone/
 
 - **`wrangler.jsonc`** (Workers with static assets, the setup Cloudflare now recommends for static sites):
   ```jsonc
-  { "name": "pi-notes", "compatibility_date": "2026-11-01", "assets": { "directory": "./public" } }
+  { "name": "chromatone", "compatibility_date": "2026-11-01", "assets": { "directory": "./public" } }
   ```
   - **Local preview:** `npx wrangler dev`.
   - **Deploy from your machine:** `npx wrangler deploy`.
   - **Deploy on push:** connect the GitHub repo in the Cloudflare dashboard (Workers Builds) with no build command, so pushes to `splinter` deploy automatically.
-  - The site is served at `pi-notes.<your-subdomain>.workers.dev`, and a custom domain can be added in the dashboard.
-- **Cloudflare Pages also works with the same layout.** Its settings would be: build command empty, output directory `public`, project name `pi-notes`. Pick one service; the folder structure doesn't change.
+  - The site is served at `chromatone.<your-subdomain>.workers.dev`, and a custom domain can be added in the dashboard.
+- **Cloudflare Pages also works with the same layout.** Its settings would be: build command empty, output directory `public`, project name `chromatone`. Pick one service; the folder structure doesn't change.
 - **Routing:** the player uses the hash (`play.html#pi`), so there's no SPA fallback and no rewrite rules.
 - **Third-party code:** VexFlow and gmp-wasm stay on jsDelivr at pinned versions, as in the prototype. Copying them into `public/vendor/` (about 1.3 MB) is an option, so the site keeps working if the CDN is blocked.
 - **Wrangler itself:** a dev dependency, so `npm install` is needed only to deploy. `npm test` stays dependency-free.
@@ -103,20 +103,26 @@ export default {
 - `prototypes/` holds both HTML files unchanged, for reference and comparison tests.
 - `public/index.html` starts as a placeholder welcome page. Deploy it once (`npx wrangler deploy`), so the pipeline is proven before any real code moves.
 
-### 2. Source interface + π (base 10)
-- `src/sources/pi.js` contains the current `computePi` / `chudnovsky` / `chudnovskyGmp` / worker code, behind `prepare()`.
-- Tests: the first 20k digits match the prototype, and `slice` and `at` agree.
+### 2. Source interface + two unlike sources
+Nothing in Chromatone is built around one series. This piece proves the interface with two sources of different kinds from the start:
+- **π (base 10):** a constant computed from position 0 in a worker. It's needed for the parity tests against the prototype. The prototype's `computePi` / `chudnovsky` / `chudnovskyGmp` / worker code moves behind `prepare()`.
+- **Thue–Morse:** a formula series with instant random access and nothing to prepare.
+- Generic naming throughout: `seq`, `source`, `symbols`. No `PI` or "digits of pi" outside `sources/pi.js`.
+- Tests:
+  - the first 20k π digits match the prototype;
+  - the Thue–Morse prefix matches OEIS A010060;
+  - `slice` and `at` agree for both sources.
 
 ### 3. Music core as modules
-- The prototype's `<pure>` section becomes `src/mappings/music/*.js`, reading from a `seq` instead of the `PI` string. That covers the schemes, readers, `buildCountVoices`, `newStream`/`buildBar`, measures, `toMusicXML` and `regenerateVoices`.
-- Its tests move over. An **equivalence test** checks that the output is identical to `prototypes/pi-notes.html` for the same settings.
+- The prototype's `<pure>` section becomes `src/mappings/music/*.js`, reading from any source's `seq` instead of the prototype's `PI` string. That covers the schemes, readers, `buildCountVoices`, `newStream`/`buildBar`, measures, `toMusicXML` and `regenerateVoices`.
+- Its tests move over. An **equivalence test** feeds the π source and checks that the output is identical to `prototypes/pi-notes.html` for the same settings. A second run on Thue–Morse checks that the core has no π assumptions.
 
-### 4. Music player page (π only), at parity with Pi Notes
+### 4. Music player page, at parity with Pi Notes
 - The prototype's UI is split into `src/app/music/*` modules: audio, chips, roll, score, controls and download.
-- The behaviour stays the same, checked against a short browser checklist: Notes/Time/Infinite, refill, MusicXML, and the pinned-code reload fix.
+- It works on any source from piece 2. The behaviour stays the same, checked against a short browser checklist: Notes/Time/Infinite, refill, MusicXML, and the pinned-code reload fix.
 
 ### 5. Welcome page + routing
-- `index.html` shows the series cards (only π so far). `play.html#<source>?<params>` opens the player for that source.
+- `index.html` shows a card for each source built so far. `play.html#<source>?<params>` opens the player for that source.
 - The source settings card (start position, the source's params) moves out of the music controls so the Colour tab can share it.
 
 ### 6. Colour tab
@@ -130,8 +136,8 @@ export default {
 - Tests: known digit prefixes for each constant and base.
 
 ### 8. Integer series
-- Nørgård's infinity series, Recamán, Thue–Morse (as `digit`, base 2) and the Fibonacci word, with the new `int` schemes (value → degree, value → interval).
-- Tests: OEIS prefixes (A004718, A005132, A010060, A003849).
+- Nørgård's infinity series, Recamán and the Fibonacci word (Thue–Morse arrives in piece 2), with the new `int` schemes (value → degree, value → interval).
+- Tests: OEIS prefixes (A004718, A005132, A003849).
 
 ### 9. Later (not in this plan)
 - Kolakoski, Stern's diatomic, Collatz paths, Rule 30 (also as a 2D image), primes, Champernowne and continued fractions.

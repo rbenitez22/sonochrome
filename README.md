@@ -36,7 +36,7 @@ Planned under `public/src/` (see `plans/foundation.md`):
 |---|---|
 | `npm test` | Runs every `tests/**/*.test.js` with Node's built-in test runner. |
 | `npm run dev` | Serves `public/` locally the way Cloudflare will (`wrangler dev`, http://localhost:8787). |
-| `npm run deploy` | Deploys `public/` to Cloudflare as the Worker `pi-notes` (`wrangler deploy`). The site is served at `https://pi-notes.<your-subdomain>.workers.dev`. |
+| `npm run deploy` | Deploys `public/` to Cloudflare as the Worker `chromatone` (`wrangler deploy`). The site is served at `https://chromatone.<your-subdomain>.workers.dev`. |
 
 Any static server also works for development, e.g. `python3 -m http.server -d public`. The pages are plain HTML and ES modules with no build step.
 
@@ -45,11 +45,11 @@ Any static server also works for development, e.g. `python3 -m http.server -d pu
 `wrangler.jsonc` sets up a **Cloudflare Worker with static assets**:
 
 ```jsonc
-{ "name": "pi-notes", "compatibility_date": "2026-11-01", "assets": { "directory": "./public" } }
+{ "name": "chromatone", "compatibility_date": "2026-11-01", "assets": { "directory": "./public" } }
 ```
 
 - **Deploy on push:** in the Cloudflare dashboard, connect the GitHub repo (Workers Builds) with no build command. Pushes to `splinter` then deploy automatically.
-- **A custom domain** can be added in the dashboard (Workers → pi-notes → Domains).
+- **A custom domain** can be added in the dashboard (Workers → chromatone → Domains).
 - **Response headers** (`public/_headers`):
   - `nosniff` and a referrer policy.
   - No long caching, because file names aren't content-hashed; browsers revalidate after each deploy.
@@ -59,13 +59,13 @@ Any static server also works for development, e.g. `python3 -m http.server -d pu
 
 See `plans/foundation.md`:
 1. Skeleton and first deploy (this piece)
-2. The source interface and π
-3. The music core as modules, with output identical to the Pi Notes prototype
+2. The source interface, with two unlike sources (π and Thue–Morse)
+3. The music core as modules, for any source, with output identical to the Pi Notes prototype when fed π
 4. The music player page
 5. The welcome page and routing
 6. The Colour tab
 7. Constants (e, √2, φ, ln 2) in any number base
-8. Integer series (Nørgård, Recamán, Thue–Morse, Fibonacci word)
+8. Integer series (Nørgård, Recamán, Fibonacci word)
 
 Later: more series, key signatures, MIDI export, a played-range history, and a Rust/Leptos port.
 
