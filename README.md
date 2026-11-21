@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). Piece 4, the music player page (`plans/music-player.md`), is under way: steps 4a (the piece state and the symbol supply) and 4b (the page without sound) are done. `play.html` shows a series as notes but doesn't play yet; the welcome page is still a placeholder.
+**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). Piece 4, the music player page (`plans/music-player.md`), is under way: steps 4a (the piece state and the symbol supply), 4b (the page) and 4c (sound and playback) are done. `play.html` plays any series; the piano roll, score and MusicXML come next. The welcome page is still a placeholder.
 
 ## Layout
 
@@ -70,7 +70,7 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 
 | Source | Kind | Cost |
 |---|---|---|
-| `pi` (π) | digit, base 10, up to 20,000,000 | Computed from position 0. Up to 20,000 digits use Machin's formula on the page. Beyond that, the Chudnovsky series runs in `workers/digits.js`, on GMP (gmp-wasm 1.3.2 ESM from jsDelivr) or on BigInt if GMP can't load (Firefox's BigInt stops at about 157k digits). A longer request recomputes from 0, and the longest result is cached. Without Worker support (or in Node) it computes on the calling thread. |
+| `pi` (π) | digit, base 10, up to 20,000,000 | Computed from position 0. Up to 20,000 digits use Machin's formula on the page. Beyond that, the Chudnovsky series runs in `workers/digits.js`, on GMP (gmp-wasm 1.3.2 ESM from jsDelivr) or on BigInt if GMP can't load (Firefox's BigInt stops at about 157k digits). A longer request recomputes from 0, and the longest result is cached. Background requests (`allowInline: false`) always use the worker, however short. Without Worker support (or in Node) it computes on the calling thread. |
 | `thue-morse` | digit, base 2 | A formula (the parity of the 1 bits in n), so any position is instant and `prepare` does nothing. |
 
 **The digits worker** (`workers/digits.js`) takes `{ constant, count }` and replies with `{ p, l }` progress, then `{ done, engine }` or `{ error, engine }`. Sources call it through `computeConstant(constant, count, { inline, report, signal, allowInline })` in `sources/constant-worker.js`. A new constant adds its BigInt and GMP engines to `ENGINES` in the worker.
@@ -147,7 +147,15 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
   - Start presets and random ranges beyond the source's `maxLength` are hidden. π stops at 19,999,999, so its 20M preset is hidden.
   - Schemes the source refuses are disabled, with the reason as a tooltip. If the current one is refused, the page picks the first allowed scheme.
 - **Within `quickLength`,** changing a setting rebuilds the piece straight away. Past it, the page says "press Play to compute", with the source's time estimate. Play then computes with a progress bar and a Cancel button.
-- **Sound, the piano roll, the score and MusicXML** arrive in steps 4c and 4d.
+- **Playback** works as in the prototype:
+  - **Notes mode** plays the whole piece once.
+  - **Time** plays for the chosen length, and **Infinite** plays until Stop. Both generate bars about 48 beats ahead and drop chips more than 64 beats behind.
+  - Play can re-randomise the start each time, and moving the tempo slider stops playback.
+- **Refills:** while a stream plays, a background refill computes more digits once fewer than 300 s are left, and never on the page.
+  - If the music catches up with a running refill, the clock pauses ("waiting for more digits…") and resumes when the refill lands.
+  - With no refill possible, playback ends where the generated music ends ("Stopped: no more computed digits").
+- **After stopping,** the status shows the positions played. The player keeps a record of them, with the source, params and settings, for a future history store.
+- **Still to come:** the piano roll, the score and MusicXML (step 4d).
 
 Modules behind the page, each with one job:
 
@@ -158,8 +166,9 @@ Modules behind the page, each with one job:
 | `app/music/controls.js` | The Options, Scheme and Sound forms: `initControls({ onChange, onTempoInput, onTempoSettled })`, `setSource(source, seq)`, `readSettings()`, `readOverrides(s)`, `showRows(s)`, voice helpers, random start. Pinned codes are kept per code length, and survive Firefox's form restore on reload. |
 | `app/music/chips.js` | The Digits → notes view: `renderChips`, `appendChips`, `removeChips`, `setChipOn`, `scrollChipIntoView`, keyed by logical event index |
 | `app/music/tabs.js` | The view tabs (ARIA keyboard pattern), remembered under `sonochrome.music-tab` |
-| `app/music/instruments.js` | `INSTRUMENTS`, `GM_PROGRAM`, `instrumentLabel(id)` |
-| `app/music/player.js` | Wiring: the source from the hash, `refresh()` (only the latest of overlapping refreshes shows its result), computing before playback |
+| `app/music/instruments.js` | `INSTRUMENTS`, `GM_PROGRAM`, `instrumentLabel(id)`, and `playNote(ctx, inst, midi, t, d, out, nodes)`: twelve synthesised instruments (Web Audio oscillators, filters, a Karplus–Strong guitar) |
+| `app/music/transport.js` | The audio clock: `unlockAudio()` (inside a user gesture), `startAudio(nv, bpm)`, `elapsed()`, `secondsPerBeat()`, `scheduleNotes(voices, sched, instrumentOf)` (1.5 s lookahead), `suspendAudio()`/`resumeAudio()`, `stopAudio()` |
+| `app/music/player.js` | Wiring: the source from the hash, `refresh()` (only the latest of overlapping refreshes shows its result), computing before playback, play/stop, the 150 ms pump, the per-frame tick, status lines, background refills |
 
 The two modules without DOM access:
 

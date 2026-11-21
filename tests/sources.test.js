@@ -49,6 +49,16 @@ test('π: past the on-page limit, prepare computes more and keeps the earlier di
   assert.deepEqual(big.slice(0, 5_000), small.slice(0, 5_000));
 });
 
+test('π: a background request (allowInline false) never computes on the page, however short', async () => {
+  // Node has no Worker, so the worker path is the only one, and it must refuse rather than compute here.
+  // A fresh module instance, so no digits are cached from the tests above.
+  const { default: pi } = await import('../public/src/sources/pi.js?fresh');
+  for (const upTo of [500, 25_000]) {
+    await assert.rejects(pi.prepare({}, upTo, () => {}, { allowInline: false }), /background tasks are not available/, String(upTo));
+  }
+  assert.equal((await pi.prepare({}, 500)).length, 3_000, 'the page itself may still compute short requests');
+});
+
 test('π: a request past maxLength is refused', async () => {
   const pi = sourceById('pi');
   await assert.rejects(pi.prepare({}, pi.maxLength + 1), RangeError);

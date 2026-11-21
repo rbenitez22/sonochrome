@@ -127,7 +127,8 @@ export function chudnovskyGmp(b, digits, report) {
 let cached = '';
 
 async function compute(upTo, report, signal, allowInline) {
-  if (upTo <= ON_PAGE_LIMIT) return machin(Math.max(upTo, ON_PAGE_MIN));
+  // Background requests (allowInline false) always go to the worker, however short, so playback never stutters.
+  if (upTo <= ON_PAGE_LIMIT && allowInline) return machin(Math.max(upTo, ON_PAGE_MIN));
   const text = await computeConstant('pi', upTo + GUARD, {
     inline: (count) => chudnovsky(count, () => {}), report, signal, allowInline,
   });
