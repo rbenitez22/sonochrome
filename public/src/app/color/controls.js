@@ -31,11 +31,15 @@ export const readoutFormat = () => $('fmt').value;
 // Show the size the image was shrunk to.
 export function showSize(w, h) { $('w').value = w; $('h').value = h; }
 
-export function showHint(mode) { $('modeHint').textContent = mode.hint; }
+// The base of the current source's seq (null for an integer series), for the hints.
+let base = 10;
+
+export function showHint(mode) { $('modeHint').textContent = mode.hintFor(base); }
 
 // Modes the source refuses are disabled, with the reason as a tooltip; a refused current mode gives
 // way to the first accepted one. probe is any seq of the source (only its base matters).
 export function setModesFor(source, probe) {
+  base = probe.base;
   for (const o of $('mode').options) {
     const verdict = modeById(o.value).accepts(probe);
     o.disabled = verdict !== true;

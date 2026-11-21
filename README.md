@@ -178,7 +178,7 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
 
 | Module | Exports |
 |---|---|
-| `modes.js` | `MODES` (`{ id, name, hint, dpc, accepts(seq), color(symbols, base) }`), `modeById(id)` |
+| `modes.js` | `MODES` (`{ id, name, hint, hintFor(base), dpc, accepts(seq), color(symbols, base, range) }`), `modeById(id)`. `hint` is the prototype's text; `hintFor(base)` gives the base's ranges (base 16: "000–fff"), identical to `hint` for base 10. |
 | `order.js` | `ORDERS` (`[kind, label]`), `cellOrder(w, h, kind)` → `[x, y]` per cell in fill order: `row`, `snake`, `col` or `spiral` |
 | `image.js` | `fitSize(w, h, dpc, start, limit)` → `{ w, h, reduced }`, `buildCells(seq, start, w, h, mode, orderKind)` → `{ cells, order }`, `symbolsNeeded(start, w, h, dpc)` |
 | `convert.js` | `formatColor(rgb, 'hex'\|'rgb'\|'hsl'\|'dec')`, `hexToRgb`, `hsl2rgb`, `rgb2hsl` |
@@ -260,6 +260,7 @@ Modules behind the page, each with one job:
 | `app/series-panel.js` | `showSeries(source, params, onParamsChange)`: the panel heading, description, page titles, and a select per source param. `routeParams(source, params)` keeps the valid, non-default params for the route; `paramValue(param, params)` gives one param's value. |
 | `app/route.js` | `parseRoute(hash)`, `formatRoute(id, params)`, `playerHref(id, params)` |
 | `app/music/controls.js` | The Length row and the Scheme and Sound forms: `initControls({ onChange, onTempoInput, onTempoSettled })`, `setSchemesFor(source, seq)`, `readSettings()` (with `readStart()`), `readOverrides(s)`, `showRows(s)`, voice helpers, `clefSetting()`. Pinned codes are kept per code length, and survive Firefox's form restore on reload. |
+| `app/music/scheme-notes.js` | `schemeNote(scheme, base)`: the explanation under the Scheme select, for the series' base. Base 10 is the prototype's text word for word. Other bases name only digits that occur (base 7 steps: "5 and 6 go down 1 and 2"; base 16 degrees: "the digits a to f are steps 10 to 15"). |
 | `app/music/chips.js` | The Digits → notes view: `renderChips`, `appendChips`, `removeChips`, `setChipOn`, `scrollChipIntoView`, keyed by logical event index |
 | `app/music/tabs.js` | The view tabs (ARIA keyboard pattern), remembered under `sonochrome.music-tab` |
 | `app/music/instruments.js` | `INSTRUMENTS`, `GM_PROGRAM`, `instrumentLabel(id)`, and `playNote(ctx, inst, midi, t, d, out, nodes)`: twelve synthesised instruments (Web Audio oscillators, filters, a Karplus–Strong guitar) |
