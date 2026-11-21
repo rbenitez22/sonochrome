@@ -98,12 +98,12 @@ export default {
 
 ## Pieces (each reviewable and committed on its own)
 
-### 1. Skeleton + first deploy
+### 1. Skeleton + first deploy (done 2026-11-21)
 - Add `README.md`, `.gitignore`, the license, `package.json`, `wrangler.jsonc`, `public/_headers`, and the folder layout from Deployment.
 - `prototypes/` holds both HTML files unchanged, for reference and comparison tests.
 - `public/index.html` starts as a placeholder welcome page. Deploy it once (`npm run deploy`), so the pipeline is proven before any real code moves.
 
-### 2. Source interface + two unlike sources
+### 2. Source interface + two unlike sources (done 2026-11-21)
 Nothing in Sonochrome is built around one series. This piece proves the interface with two sources of different kinds from the start:
 - **π (base 10):** a constant computed from position 0 in a worker. It's needed for the parity tests against the prototype. The prototype's `computePi` / `chudnovsky` / `chudnovskyGmp` / worker code moves behind `prepare()`.
 - **Thue–Morse:** a formula series with instant random access and nothing to prepare.
@@ -113,11 +113,11 @@ Nothing in Sonochrome is built around one series. This piece proves the interfac
   - the Thue–Morse prefix matches OEIS A010060;
   - `slice` and `at` agree for both sources.
 
-### 3. Music core as modules
+### 3. Music core as modules (done 2026-11-21; steps in `plans/music-core.md`)
 - The prototype's `<pure>` section becomes `src/mappings/music/*.js`, reading from any source's `seq` instead of the prototype's `PI` string. That covers the schemes, readers, `buildCountVoices`, `newStream`/`buildBar`, measures, `toMusicXML` and `regenerateVoices`.
 - Its tests move over. An **equivalence test** feeds the π source and checks that the output is identical to `prototypes/pi-notes.html` for the same settings. A second run on Thue–Morse checks that the core has no π assumptions.
 
-### 4. Music player page, at parity with Pi Notes
+### 4. Music player page, at parity with Pi Notes (done 2026-11-21; steps in `plans/music-player.md`)
 - The prototype's UI is split into `src/app/music/*` modules: audio, chips, roll, score, controls and download.
 - It works on any source from piece 2. The behaviour stays the same, checked against a short browser checklist: Notes/Time/Infinite, refill, MusicXML, and the pinned-code reload fix.
 

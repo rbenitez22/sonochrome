@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). Piece 4, the music player page (`plans/music-player.md`), is under way: steps 4a–4d are done (piece state and supply, the page, playback, the piano roll, score and MusicXML): `play.html` plays any series with every view of the prototype. The parity checklist (4e) comes next; the welcome page is still a placeholder.
+**Status:** pieces 1–4 of `plans/foundation.md` are done. That covers the skeleton and deploy, the source interface (π and Thue–Morse), the music core as pure modules, and the music player `play.html`, at parity with the Pi Notes prototype (`plans/music-core.md`, `plans/music-player.md`). The welcome page is still a placeholder; piece 5 lists the series and links to the player.
 
 ## Layout
 
@@ -161,6 +161,11 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
   - **Clef:** Automatic picks bass for low voices; Treble and Bass apply to every voice.
 - **Download MusicXML** saves `<source id>-<start>-<end>.musicxml`, titled with the source's name and subtitled `Sonochrome: digits A–B`. Notes and Time save the whole piece; Infinite saves the bars played so far, so its button waits for Play.
 
+**Parity with the prototype** (checked in Chromium and Firefox on 2026-11-21):
+- For 72 settings (every scheme and code length, 1 or 3 voices, Notes/Time/Infinite, two starts), the chips match `prototypes/pi-notes.html` exactly, including the pending "press Play to compute" state.
+- The status lines and the score agree, and pinned codes survive Firefox's form restore the same way.
+- **Deliberate differences:** the heading and Series select, "position" in the start label, and the hidden 20M preset (π's last position is 19,999,999).
+
 Modules behind the page, each with one job:
 
 | Module | Job |
@@ -250,7 +255,7 @@ See `plans/foundation.md`:
 1. Skeleton and first deploy (done)
 2. The source interface, with two unlike sources (π and Thue–Morse) (done)
 3. The music core as modules, for any source, with output identical to the Pi Notes prototype when fed π (done)
-4. The music player page
+4. The music player page (done)
 5. The welcome page and routing
 6. The Colour tab
 7. Constants (e, √2, φ, ln 2) in any number base
