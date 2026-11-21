@@ -20,6 +20,7 @@ test('every source has the interface fields, and ids are unique', () => {
     assert.equal(typeof s.id, 'string', s.id);
     assert.equal(typeof s.name, 'string', s.id);
     assert.equal(typeof s.blurb, 'string', s.id);
+    if (s.glyph !== undefined) assert.ok(typeof s.glyph === 'string' && s.glyph.length <= 3, s.id);
     assert.ok(['digit', 'int'].includes(s.kind), s.id);
     assert.ok(Array.isArray(s.params), s.id);
     assert.ok(s.maxLength > 0, s.id);

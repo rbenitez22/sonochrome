@@ -121,7 +121,7 @@ Nothing in Sonochrome is built around one series. This piece proves the interfac
 - The prototype's UI is split into `src/app/music/*` modules: audio, chips, roll, score, controls and download.
 - It works on any source from piece 2. The behaviour stays the same, checked against a short browser checklist: Notes/Time/Infinite, refill, MusicXML, and the pinned-code reload fix.
 
-### 5. Welcome page + routing
+### 5. Welcome page + routing (done 2026-11-21; steps in `plans/welcome-and-routing.md`)
 - `index.html` shows a card for each source built so far. `play.html#<source>?<params>` opens the player for that source.
 - The source settings card (start position, the source's params) moves out of the music controls so the Colour tab can share it.
 

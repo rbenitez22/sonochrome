@@ -8,13 +8,13 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–4 of `plans/foundation.md` are done. That covers the skeleton and deploy, the source interface (π and Thue–Morse), the music core as pure modules, and the music player `play.html`, at parity with the Pi Notes prototype (`plans/music-core.md`, `plans/music-player.md`). The welcome page is still a placeholder; piece 5 lists the series and links to the player.
+**Status:** pieces 1–5 of `plans/foundation.md` are done. That covers the skeleton and deploy, the source interface (π and Thue–Morse), the music core, the music player at parity with the Pi Notes prototype, and the welcome page with routing (`plans/music-core.md`, `plans/music-player.md`, `plans/welcome-and-routing.md`). Next is piece 6, the Colour tab.
 
 ## Layout
 
 ```
 public/          the deployed site: only this folder is served
-  index.html     welcome page (series cards)
+  index.html     welcome page: one card per source, linking to its player
   play.html      the player: play.html#<source id>, e.g. play.html#thue-morse
   favicon.svg    the icon: π drawn as two beamed eighth notes (the bar is the beam, the legs the stems)
   _headers       response headers for Cloudflare
@@ -40,6 +40,7 @@ A **source** is one series. Each lives in `public/src/sources/<id>.js` and defau
 export default {
   id: 'thue-morse',            // used in URLs and the registry
   name: 'Thue–Morse',
+  glyph: '01',                 // optional: the welcome card's symbol (defaults to name)
   blurb: 'One line for the welcome card.',
   kind: 'digit',               // 'digit' (symbols 0..base-1) or 'int' (unbounded integers; none yet)
   params: [],                  // user-facing settings, e.g. { id, label, choices, default }
@@ -138,6 +139,15 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
 - **Equivalence with the prototype:** on π, every module's output is identical to the Pi Notes prototype's for the same settings. That covers the 11,520-case Notes grid, streaming bar by bar, bars and 48 MusicXML scores.
 - **Every source:** `tests/music-sources.test.js` runs the whole core (Notes mode, streaming, regeneration, bars, MusicXML) on every source in `SOURCES`, with every scheme that accepts it. It checks what must hold for any series: notes come out, beats add up, events point back at their symbols, and the score is sound (`tests/musicxml-checks.js`).
 - **No π in the core:** the same file fails if anything in `mappings/music/` mentions π.
+
+## Welcome page
+
+`public/index.html` lists every source in `SOURCES` as a card (`app/welcome.js`). Each card shows:
+- the source's `glyph` and its name (only announced, not shown, when the glyph is the name, as with π);
+- its blurb, and its first 32 symbols when it has them without a wait (`quickLength ≥ 32`);
+- the whole card links to `play.html#<id>` (`playerHref`), and the player's "← All series" link comes back.
+
+Without JavaScript the page shows direct links to the players instead.
 
 ## Player
 
@@ -274,7 +284,7 @@ See `plans/foundation.md`:
 2. The source interface, with two unlike sources (π and Thue–Morse) (done)
 3. The music core as modules, for any source, with output identical to the Pi Notes prototype when fed π (done)
 4. The music player page (done)
-5. The welcome page and routing
+5. The welcome page and routing (done)
 6. The Colour tab
 7. Constants (e, √2, φ, ln 2) in any number base
 8. Integer series (Nørgård, Recamán, Fibonacci word)

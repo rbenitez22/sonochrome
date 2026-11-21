@@ -15,6 +15,7 @@ const seq = formulaSeq(LENGTH, 2, thueMorse);
 export default {
   id: 'thue-morse',
   name: 'Thue–Morse',
+  glyph: '01',
   blurb: 'Start with 0, then keep appending the complement: 0 1 10 1001 … Never repeats a block three times in a row.',
   kind: 'digit',
   params: [],

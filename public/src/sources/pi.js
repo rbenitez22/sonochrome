@@ -138,6 +138,7 @@ async function compute(upTo, report, signal, allowInline) {
 export default {
   id: 'pi',
   name: 'π',
+  glyph: 'π',
   blurb: 'The ratio of a circle’s circumference to its diameter: 3.14159… Its digits never repeat.',
   kind: 'digit',
   params: [],

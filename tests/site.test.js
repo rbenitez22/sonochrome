@@ -24,10 +24,27 @@ test('the player page and the favicon are in public/, and both pages link the ic
   assert.match(read('public/play.html'), /<script type="module" src="src\/app\/music\/player.js"><\/script>/);
 });
 
-test('every id the player scripts look up exists in play.html', () => {
-  const html = read('public/play.html');
+test('every id the scripts of a page look up exists in that page', () => {
   const dir = new URL('public/src/app/', root);
-  const files = ['dom.js', 'progress.js', 'start.js', 'series-panel.js', 'music/controls.js', 'music/chips.js', 'music/tabs.js', 'music/player.js', 'music/roll.js', 'music/score.js', 'music/download.js'];
-  const ids = new Set(files.flatMap((f) => [...readFileSync(new URL(f, dir), 'utf8').matchAll(/\$\('([\w-]+)'\)/g)].map((m) => m[1])));
-  for (const id of ids) assert.match(html, new RegExp(`id="${id}"`), id);
+  const pages = {
+    'public/play.html': ['dom.js', 'progress.js', 'start.js', 'series-panel.js', 'music/controls.js', 'music/chips.js',
+      'music/tabs.js', 'music/player.js', 'music/roll.js', 'music/score.js', 'music/download.js'],
+    'public/index.html': ['welcome.js'],
+  };
+  for (const [page, files] of Object.entries(pages)) {
+    const html = read(page);
+    const ids = new Set(files.flatMap((f) => [...readFileSync(new URL(f, dir), 'utf8').matchAll(/\$\('([\w-]+)'\)/g)].map((m) => m[1])));
+    for (const id of ids) assert.match(html, new RegExp(`id="${id}"`), `${page}: ${id}`);
+  }
+});
+
+test('the welcome page builds its cards from the sources, and its fallback links name real sources', async () => {
+  const html = read('public/index.html');
+  assert.match(html, /<script type="module" src="src\/app\/welcome.js"><\/script>/);
+  assert.match(html, /<nav class="cards" id="cards" aria-label="Series">/);
+  const { sourceById } = await import('../public/src/sources/index.js');
+  const { parseRoute } = await import('../public/src/app/route.js');
+  const links = [...html.matchAll(/href="play\.html(#[^"]*)"/g)].map((m) => m[1]);
+  assert.ok(links.length > 0);
+  for (const hash of links) assert.ok(sourceById(parseRoute(hash).id), hash);
 });
