@@ -1,4 +1,4 @@
-# Plan: permanent browser tests
+# Plan: permanent browser tests (done 2026-11-21: 112 tests, `npm run test:browser`)
 
 Every browser check so far ran as a throwaway Playwright script in the session scratchpad. They covered parity with both prototypes, playback, refills, views, routes, constants, integer series, the score and canvas fixes. This plan turns them into a test suite in the repo, run with one command in Chromium and Firefox.
 

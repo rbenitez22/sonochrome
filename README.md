@@ -314,7 +314,7 @@ const seq = (await supply.ready(5_000)) ?? (await supply.compute(5_000_000, (p, 
 
 ## Browser tests
 
-`tests/browser/` turns the checks made by hand while building each piece into a Playwright suite (`plans/browser-tests.md`).
+`tests/browser/` turns the checks made by hand while building each piece into a Playwright suite (`plans/browser-tests.md`): 112 tests across both browsers, about 40 s. The quick run skips the 34 tagged `@slow` and takes about 16 s.
 - **The fixture** (`fixtures.js`) fails any test whose page throws or logs a console error. The one exception is Firefox's report of web-font downloads cancelled by a navigation.
 - **Helpers:** `setField(page, id, value)` sets a field and fires the event the page listens for, and `openPlayer(page, route)` opens the player and waits for its view.
 - **Browsers:** Chromium runs with `--autoplay-policy=no-user-gesture-required` and Firefox with `media.autoplay.default: 0`, so audio plays without a click.
@@ -327,6 +327,9 @@ const seq = (await supply.ready(5_000)) ?? (await supply.compute(5_000_000, (p, 
 | `playback.spec.js` | Notes ends and highlights (@slow); Time stops on time and replays (@slow); Infinite drops old chips (@slow); random each play; the tempo stops playback; a due refill starts the digits worker (needs GMP) |
 | `refill.spec.js` | Fake sources registered in the page: a slow refill makes the music wait and resume; a failing one ends playback where the music ends |
 | `music-views.spec.js` | The roll draws; the score draws, redraws for a clef, highlights, and its tab is remembered; page turns at bar 9 (@slow); MusicXML downloads in every mode are well formed with full bars; score rows fit their notes |
+| `color-parity.spec.js` | @slow: 112 settings (7 modes × 4 orders × 2 sizes × 2 starts) give the same colour list, digits and canvas pixels as `prototypes/pi-color-generator.html`; the readout and readout formats match |
+| `color.spec.js` | Compute past `quickLength` (needs GMP); shrinking to fit at Recamán's cap; the iOS canvas-area cap, painted to the corner; the PNG's name; modes a series refuses |
+| `series.spec.js` | All nine series play and draw with the right default scheme, colour mode and digit/term wording; base 12 and 16; the base-7 steps note; ln 2 in hex from 100k in the worker (needs GMP); integer readouts |
 
 ## Requirements
 
