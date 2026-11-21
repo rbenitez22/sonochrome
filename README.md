@@ -56,11 +56,14 @@ export default {
   - `allowInline: false` makes it fail rather than compute on the page when Web Workers are unavailable (for background refills that must not freeze playback).
 - **`quickLength`** (optional, default 0) is how far the player prepares as settings change; past it, the user presses Play to compute. π: 20,000. Thue–Morse: all of it.
 - **`estimateSeconds(upTo)`** (optional) is a rough compute time on a laptop. Only π has one.
-- **A seq** is `{ length, base, at(i), slice(i, j) }`.
+- **A seq** is `{ length, base, at(i), slice(i, j) }`. Integer series (`kind: 'int'`) have `base: null`, and `symbolString(values, null)` shows their terms comma-separated.
   - `length` may exceed `upTo`; `base` is the alphabet size of a digit source, or `null` for integer sources.
   - `at(i)` returns a number and throws a `RangeError` outside `0..length-1`.
   - `slice(i, j)` returns an array of numbers and clamps its range like `Array.prototype.slice` (no negative indices).
-- **Helpers** in `seq.js`: `digitStringSeq(text, base)` wraps a string of digit characters; `formulaSeq(length, base, term)` wraps a function of the position.
+- **Helpers** in `seq.js`:
+  - `digitStringSeq(text, base)` wraps a string of digit characters;
+  - `formulaSeq(length, base, term)` wraps a function of the position;
+  - `arraySeq(values, length, base = null)` wraps a growing array (Recamán).
 - **Registry** in `sources/index.js`: `SOURCES` (in welcome-page order) and `sourceById(id)`, which returns `null` for an unknown id.
 
 ```js
@@ -73,6 +76,9 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 |---|---|---|
 | `pi` (π), `e`, `sqrt2` (√2), `phi` (φ), `ln2` (ln 2) | digit, in base 2, 3, 4, 5, 6, 7, 8, 10, 12 or 16 (param `base`, default 10), up to 20,000,000 digits | Built by `makeConstant` in `sources/constant.js`, and computed from position 0. Up to 20,000 digits are computed on the page with the BigInt engine; π in base 10 uses Machin's formula there, exactly as in the prototype. Beyond that, the digits worker computes them with GMP (gmp-wasm 1.3.2 ESM from jsDelivr), or with BigInt if GMP can't load (Firefox's BigInt stops at about 157k decimal digits). One digit string is cached per base. A longer request recomputes from 0 and keeps the longest. Background requests (`allowInline: false`) always use the worker, however short. Position 0 is the first digit of the integer part, so ln 2 starts `0693…`. |
 | `thue-morse` | digit, base 2 | A formula (the parity of the 1 bits in n), so any position is instant and `prepare` does nothing. |
+| `fibonacci-word` (A003849) | digit, base 2 | The exact formula a(n) = 2 + ⌊(n+1)φ⌋ − ⌊(n+2)φ⌋, with ⌊nφ⌋ = ⌊(n + ⌊√5·n⌋)/2⌋ (Number arithmetic below 40M, BigInt above). Any position is instant. |
+| `norgard` (A004718) | int, signed and small | Nørgård's infinity series. A formula from the bits of n: a 1 adds one, a 0 negates. Any position is instant. Registered with the music and colour schemes for integers (piece 8b). |
+| `recaman` (A005132) | int, ≥ 0, growing (to about 6M) | Computed from 0 on the page and extended as needed (1M terms in about 12 ms, plus an 8 MB visited bitmap). Capped at 1,000,000 terms. Registered in piece 8b. |
 
 **Constants** (`sources/constant.js`): `makeConstant({ id, name, glyph, blurb, quick })` builds a source from an `ENGINES` id. `readBase(params)` turns `{ base: '12' }` into 12; a missing base, or one not in `BASES`, means 10.
 

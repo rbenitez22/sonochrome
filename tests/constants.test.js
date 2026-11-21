@@ -12,8 +12,8 @@ import { modeById } from '../public/src/mappings/color/modes.js';
 const CONSTANTS = ['pi', 'e', 'sqrt2', 'phi', 'ln2'];
 const first = async (id, n, params = {}) => symbolString((await sourceById(id).prepare(params, n)).slice(0, n));
 
-test('the welcome order: π, e, √2, φ, ln 2, then Thue–Morse', () => {
-  assert.deepEqual(SOURCES.map((s) => s.id), [...CONSTANTS, 'thue-morse']);
+test('the welcome order starts with the constants: π, e, √2, φ, ln 2', () => {
+  assert.deepEqual(SOURCES.map((s) => s.id).slice(0, 5), CONSTANTS);
   for (const id of CONSTANTS) {
     const s = sourceById(id);
     assert.deepEqual(s.params, [{ id: 'base', label: 'Base', choices: BASES, default: 10 }]);

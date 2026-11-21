@@ -74,7 +74,7 @@ for (const source of SOURCES) {
   }
 }
 
-test('a scheme that refuses a seq gives a reason; today only codes refuses Thue–Morse', async () => {
+test('a scheme that refuses a seq gives a reason; among digit series only codes refuses the binary ones', async () => {
   const refused = [];
   for (const source of SOURCES) {
     const seq = await source.prepare({}, LENGTH);
@@ -85,7 +85,7 @@ test('a scheme that refuses a seq gives a reason; today only codes refuses Thue�
       refused.push(`${source.id}/${sc.id}`);
     }
   }
-  assert.deepEqual(refused, ['thue-morse/codes']);
+  assert.deepEqual(refused.filter((r) => !r.startsWith('norgard/') && !r.startsWith('recaman/')), ['thue-morse/codes', 'fibonacci-word/codes']);
 });
 
 test('the music core never mentions π: it is one series among many', () => {

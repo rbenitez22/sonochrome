@@ -16,7 +16,7 @@ export function showReadout({ x, y, c }, format) {
 // The symbols the image reads, from start to end (exclusive), up to DIGITS_SHOWN of them.
 export function showDigitsUsed(seq, start, end) {
   const shown = Math.min(end, start + DIGITS_SHOWN);
-  $('digits').textContent = (start > 0 ? '…' : '') + symbolString(seq.slice(start, shown)) + (end > shown ? '… (' + (end - shown) + ' more)' : '');
+  $('digits').textContent = (start > 0 ? '…' : '') + symbolString(seq.slice(start, shown), seq.base) + (end > shown ? '… (' + (end - shown) + ' more)' : '');
 }
 
 // The first LIST_LENGTH cells in fill order: swatch, symbols, colour.

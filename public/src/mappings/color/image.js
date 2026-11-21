@@ -24,7 +24,7 @@ export function buildCells(seq, start, w, h, mode, orderKind) {
   const cells = new Array(w * h);
   order.forEach(([x, y], i) => {
     const at = start + i * mode.dpc;
-    const symbols = symbolString(seq.slice(at, at + mode.dpc));
+    const symbols = symbolString(seq.slice(at, at + mode.dpc), seq.base);
     cells[y * w + x] = { start: at, symbols, rgb: mode.color(symbols, seq.base) };
   });
   return { cells, order };

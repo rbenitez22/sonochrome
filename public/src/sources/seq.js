@@ -48,3 +48,17 @@ export function formulaSeq(length, base, term) {
     },
   };
 }
+
+// A seq over the first `length` entries of an array of numbers (e.g. a Float64Array a source fills as it
+// computes). base is null for integer series.
+export function arraySeq(values, length, base = null) {
+  return {
+    length,
+    base,
+    at(i) { checkIndex(i, length); return values[i]; },
+    slice(i, j) {
+      const [from, to] = clampRange(i, j, length);
+      return Array.from(values.subarray ? values.subarray(from, to) : values.slice(from, to));
+    },
+  };
+}

@@ -5,8 +5,11 @@ import { chunkSize, decodeChunk } from './schemes.js';
 
 export function newReader(s, pos) { return { pos, cur: Math.floor(SCALES[s.scale].length * s.range / 2) }; }
 
-// Symbol values → one character each: 0-9, then a-z.
-export function symbolString(values) { return values.map((v) => v.toString(36)).join(''); }
+// Symbol values as text: one character each for a digit series (0-9, then a-z), or the integers
+// separated by ", " for an integer series (base null).
+export function symbolString(values, base) {
+  return base === null ? values.join(', ') : values.map((v) => v.toString(36)).join('');
+}
 
 /* Read the next event and advance the reader, or return null when seq is too short.
    The event is { rest, midi, beats[, pinned], at, symbols, label }: `at` is the position of its
@@ -14,7 +17,7 @@ export function symbolString(values) { return values.map((v) => v.toString(36)).
 export function readEvent(s, seq, overrides, rd) {
   const chunk = chunkSize(s);
   if (rd.pos + chunk > seq.length) return null;
-  const d = symbolString(seq.slice(rd.pos, rd.pos + chunk));
+  const d = symbolString(seq.slice(rd.pos, rd.pos + chunk), seq.base);
   const at = rd.pos;
   rd.pos += chunk;
   const e = decodeChunk(s, d, overrides, rd, seq.base ?? 10);

@@ -12,7 +12,7 @@ const PREVIEW = 32;
 async function preview(source) {
   if ((source.quickLength ?? 0) < PREVIEW) return '';
   const seq = await source.prepare({}, PREVIEW);
-  return symbolString(seq.slice(0, PREVIEW)) + '…';
+  return symbolString(seq.slice(0, PREVIEW), seq.base) + '…';
 }
 
 // One card. The name is announced but not shown again when the glyph already is the name (π).
