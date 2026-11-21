@@ -2,6 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { test, expect, openPlayer, setField } from './fixtures.js';
 import { assertWellFormed } from '../musicxml-checks.js';
+import { readMidi, notesOf } from '../midi-reader.js';
 
 // Every measure of every part sums to 16 divisions (4/4 at four divisions a quarter).
 const fullBars = (xml) => [...xml.matchAll(/<measure number="\d+">([\s\S]*?)<\/measure>/g)]
@@ -129,3 +130,35 @@ test('C major keeps the flat spelling and no signature', async ({ page }) => {
   const counts = await page.$$eval('#sheet svg .vf-keysignature', (ks) => ks.map((k) => k.querySelectorAll('path').length).filter((n) => n > 0));
   expect(counts.every((n) => n === 4)).toBe(true);
 });
+
+// Download the MIDI file and read it back.
+async function saveMidi(page) {
+  const [download] = await Promise.all([page.waitForEvent('download'), page.click('#dlMidi')]);
+  return { name: download.suggestedFilename(), midi: readMidi(readFileSync(await download.path())) };
+}
+
+test('MIDI downloads for Notes, Time and Infinite (after playing), with tracks, programs and key', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  await setField(page, 'nv', 2);
+  await page.click('#tab-sheet');
+  const notes = await saveMidi(page);
+  expect(notes.name).toBe('pi-0-187.mid');   // two voices read digits 0–187
+  expect(notes.midi.format).toBe(1);
+  expect(notes.midi.tracks).toHaveLength(3);
+  const title = notes.midi.tracks[0].find((e) => e.meta === 0x03).data;
+  expect(new TextDecoder().decode(Uint8Array.from(title))).toBe('π: digits 0–187');
+  expect(notes.midi.tracks[1].find((e) => e.kind === 0xc0).a).toBe(0);    // piano: GM program 1
+  expect(notes.midi.tracks[2].find((e) => e.kind === 0xc0).a).toBe(32);   // bass: GM program 33
+  expect(notesOf(notes.midi.tracks[1]).length).toBeGreaterThan(10);
+  for (const [id, v] of [['key', 4], ['scale', 'Major'], ['lenMode', 'time'], ['duration', '0:20']]) await setField(page, id, v);
+  const time = await saveMidi(page);
+  expect(time.midi.tracks[0].find((e) => e.meta === 0x59).data).toEqual([4, 0]);   // E major
+  await setField(page, 'lenMode', 'infinite');
+  await expect(page.locator('#dlMidi')).toBeDisabled();
+  await page.click('#play');
+  await expect(page.locator('#dlMidi')).toBeEnabled();
+  await page.waitForTimeout(1500);
+  await page.click('#play');
+  expect((await saveMidi(page)).name).toMatch(/^pi-0-\d+\.mid$/);
+});
+

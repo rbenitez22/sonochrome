@@ -19,7 +19,7 @@ import {
   renderScore, showScoreMessage, setScoreNoteOn, scrollScoreTo, pageOf, renderedScorePage, scoreIsDirty,
   markScoreDirty, resetScorePage,
 } from './score.js';
-import { updateDownload, downloadMusicXML } from './download.js';
+import { updateDownload, downloadMusicXML, downloadMidi } from './download.js';
 import { GM_PROGRAM } from './instruments.js';
 import {
   unlockAudio, startAudio, secondsPerBeat, elapsed, scheduleNotes, suspendAudio, resumeAudio, stopAudio,
@@ -293,13 +293,18 @@ function onTabShown(name) {
   }
 }
 
-function saveMusicXML() {
+// What both downloads need to know beyond the piece: names, tempo, key, instruments.
+const exportMeta = () => ({
+  sourceId: source.id, sourceName: source.name, units: unitWords(source), key: scoreKey(), bpm: +$('tempo').value, clefSetting: clefSetting(),
+  parts: piece.voices.map((_, k) => ({ name: voiceLabel(k), program: GM_PROGRAM[instrumentOf(k)] || 1 })),
+});
+
+// download(piece, seq, beatsPlayed, meta) → false when the symbols it needs aren't there any more.
+function save(download) {
   if (!piece) return;
-  const saved = downloadMusicXML(piece, supply.seq, beatsPlayed(), {
-    sourceId: source.id, sourceName: source.name, units: unitWords(source), key: scoreKey(), bpm: +$('tempo').value, clefSetting: clefSetting(),
-    parts: piece.voices.map((_, k) => ({ name: voiceLabel(k), program: GM_PROGRAM[instrumentOf(k)] || 1 })),
-  });
-  if (!saved) $('status').textContent = 'Could not rebuild the score: the ' + unitWords(source) + ' it needs are not computed.';
+  if (!download(piece, supply.seq, beatsPlayed(), exportMeta())) {
+    $('status').textContent = 'Could not rebuild the score: the ' + unitWords(source) + ' it needs are not computed.';
+  }
 }
 
 // Redraw the roll and (when stopped) the score after the window settles at a new size.
@@ -331,7 +336,8 @@ function init() {
     onTempoInput: () => { if (playing) stop(); updateStatus(); },
     onTempoSettled: () => { if ($('lenMode').value !== 'notes') refresh(); },
   });
-  $('dlXml').addEventListener('click', saveMusicXML);
+  $('dlXml').addEventListener('click', () => save(downloadMusicXML));
+  $('dlMidi').addEventListener('click', () => save(downloadMidi));
   window.addEventListener('resize', () => { if (visible) onResize(); });
   try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (visible) recolor(); }); } catch (e) {}
   new MutationObserver(() => { if (visible) recolor(); }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
