@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–2 of `plans/foundation.md` are done: the skeleton and deploy, then the source interface with two sources (π and Thue–Morse). Piece 3, the music core as modules (`plans/music-core.md`), is under way: steps 3a (theory, schemes, reader) and 3b (voices, streaming, timing) are done. The site is still a placeholder welcome page.
+**Status:** pieces 1–2 of `plans/foundation.md` are done: the skeleton and deploy, then the source interface with two sources (π and Thue–Morse). Piece 3, the music core as modules (`plans/music-core.md`), is under way: steps 3a (theory, schemes, reader), 3b (voices, streaming, timing) and 3c (bars, MusicXML) are done. The site is still a placeholder welcome page.
 
 ## Layout
 
@@ -83,6 +83,8 @@ seq.slice(0, 5); // [3, 1, 4, 1, 5]
 | `schemes.js` | `SCHEMES` (`{ id, label, accepts(seq) }`), `chunkSize(s)`, `decodeChunk(s, chunk, overrides, rd)`, `symbolsPerBeat(s)`, and the tables `PAIR_LEN`, `CODE_LEN`, `STEPS` |
 | `reader.js` | `newReader(s, pos)` → `{ pos, cur }`, `readEvent(s, seq, overrides, rd)` → an event or `null` when the seq is too short, `symbolString(values)` |
 | `voices.js` | `buildCountVoices(s, seq, overrides, octs)` → `{ voices: [{ events, total }], nextPos }` (Notes mode); `newStream(s, octs)`, `buildBar(stream, seq, overrides, limit = Infinity)` → `{ events, barEnd, done }` or `null` (Time/Infinite); `regenerateVoices(s, seq, overrides, octs, limit)` |
+| `measures.js` | `toMeasures(events)` and `measuresInRange(events, fromBeat, toBeat, off = 0)` → bars of pieces `{ ei, rest, midi, beats, tie }`; `decompose(beats)`, `exportBeats(played)`, `chooseClef(events, 'auto'\|'treble'\|'bass')` |
+| `musicxml.js` | `toMusicXML(score)` → a MusicXML 4.0 string; `padBars(partsBars)`, `xmlEscape(text)`, `XML_DIVISIONS` (4 per quarter) |
 | `timing.js` | `parseDuration('1:30')` → `90` (or `null`), `fmtTime(3723)` → `'1:02:03'`, `beatsForSeconds(sec, bpm)`, `streamSymbols(s, nv, beats)`, `symbolsNeeded(s, nv)`, `DURATION_MIN`/`DURATION_MAX` (5 s and 99:59) |
 
 ```js
@@ -108,7 +110,24 @@ const st = newStream({ ...s, start: 0 }, [4, 3]);   // two voices, octaves 4 and
 const bar = buildBar(st, seq, {});                  // { events: [[…], […]], barEnd: 4, done: false }
 ```
 
-Still to come in piece 3: bars and MusicXML (`measures.js`, `musicxml.js`).
+- **Bars:** pieces lie on a sixteenth-note grid. A note that crosses a barline becomes tied pieces, and time no event covers becomes rests. `ei` is the index of a piece's event (plus `off`), or `-1` for a filler rest.
+  - `measuresInRange` cuts a window `[fromBeat, toBeat)`, both on barlines, out of a stream.
+  - `exportBeats` rounds a played length up to the next barline, with one bar at least.
+  - `chooseClef` with `'auto'` picks bass when the average pitch is below A3.
+- **MusicXML:** `score = { title, subtitle, bpm, parts: [{ name, program, clef, bars }] }`, where `program` is a General MIDI program (1-based). Pad the parts to equal length with `padBars` first. The output says `<software>Sonochrome</software>`, which is the only difference from the prototype's output.
+
+```js
+import { regenerateVoices } from './src/mappings/music/voices.js';
+import { measuresInRange, exportBeats, chooseClef } from './src/mappings/music/measures.js';
+import { toMusicXML, padBars } from './src/mappings/music/musicxml.js';
+const limit = exportBeats(30.5);                                  // 32 beats = 8 bars
+const voices = regenerateVoices({ ...s, start: 0 }, seq, {}, [4, 2], limit);
+const bars = padBars(voices.map((v) => measuresInRange(v, 0, limit)));
+const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
+  parts: bars.map((b, k) => ({ name: 'Voice ' + (k + 1), program: 1, clef: chooseClef(voices[k], 'auto'), bars: b })) });
+```
+
+Still to come in piece 3: a run of the whole core on Thue–Morse, to show it has no π assumptions (3d).
 
 ## Requirements
 
