@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi Color Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f1f4f7; --panel: #ffffff; --ink: #12202f; --muted: #5b6b7b; --line: #d5dde5;
+  --accent: #0b7a80; --accent-ink: #ffffff; --hot: #e08a00;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0c1722; --panel: #14222f; --ink: #e6edf3; --muted: #93a4b4; --line: #26394a; --accent: #3fc1c6; --accent-ink: #062226; --hot: #ffb938; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); }
+main { max-width: 760px; margin: 0 auto; padding: 20px 16px 48px; display: flex; flex-direction: column; gap: 16px; }
+h1 { font: 700 34px/1.05 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.sub { margin: 6px 0 0; color: var(--muted); max-width: 54ch; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.card h2 { font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 520px) { .grid { grid-template-columns: 1fr; } }
+label { display: block; font: 500 12px/1 var(--mono); color: var(--muted); margin-bottom: 6px; }
+select, input[type=number] { width: 100%; font: 400 15px/1.2 var(--mono); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+select:focus-visible, input:focus-visible, button:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
+.row { display: flex; gap: 8px; align-items: center; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.pills button { font: 500 13px/1 var(--mono); background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+.pills button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.hint { font: 400 12px/1.45 var(--mono); color: var(--muted); margin: 8px 0 0; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+button.primary { font: 700 16px/1 var(--display); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 13px 22px; cursor: pointer; }
+button.ghost { font: 500 14px/1 var(--body); background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 11px 14px; cursor: pointer; }
+.stage { background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0/16px 16px; border-radius: 8px; overflow: auto; max-height: 70vh; border: 1px solid var(--line); text-align: center; }
+canvas { display: block; image-rendering: pixelated; margin: 0 auto; max-width: none; }
+.readout { font: 400 13px/1.5 var(--mono); min-height: 3.2em; display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.sw { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line); flex: none; }
+.status { font: 400 13px/1.4 var(--mono); color: var(--muted); margin-top: 8px; }
+.digits { font: 400 14px/1.6 var(--mono); word-break: break-all; }
+.digits mark { background: var(--hot); color: #1a1204; border-radius: 3px; padding: 0 1px; }
+.list { max-height: 220px; overflow: auto; font: 400 13px/1.7 var(--mono); }
+.list div { display: flex; align-items: center; gap: 8px; }
+.list i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); display: inline-block; flex: none; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Pi <span>Color</span> Generator</h1>
+    <p class="sub">Each pixel's color is read straight from the digits of π. Pick how digits become colors, where to start, and how big to draw it.</p>
+  </header>
+
+  <section class="card" aria-label="Controls">
+    <h2>Controls</h2>
+    <div class="grid">
+      <div>
+        <label for="mode">Color mode</label>
+        <select id="mode"></select>
+        <p class="hint" id="modeHint"></p>
+      </div>
+      <div>
+        <label for="offset">Offset (digits to skip)</label>
+        <input id="offset" type="number" min="0" max="100000" step="1" value="0">
+        <div class="pills" id="offPresets"></div>
+        <p class="hint">0 starts at the “3” of 3.14159…, 1 starts at the first decimal digit.</p>
+      </div>
+      <div>
+        <label>Pixel size (screen px per cell)</label>
+        <div class="row"><input id="px" type="number" min="1" max="200" step="1" value="20"></div>
+        <div class="pills" id="pxPresets"></div>
+      </div>
+      <div>
+        <label>Image size (cells)</label>
+        <div class="row">
+          <input id="w" type="number" min="1" max="300" value="16" aria-label="Width in cells">
+          <span>×</span>
+          <input id="h" type="number" min="1" max="300" value="16" aria-label="Height in cells">
+        </div>
+        <div class="pills" id="sizePresets"></div>
+      </div>
+      <div>
+        <label for="fmt">Readout format</label>
+        <select id="fmt">
+          <option value="hex">Hex (#RRGGBB)</option>
+          <option value="rgb">RGB (r, g, b)</option>
+          <option value="hsl">HSL (h, s%, l%)</option>
+          <option value="dec">Decimal (0xRRGGBB as integer)</option>
+        </select>
+      </div>
+      <div>
+        <label for="order">Fill order</label>
+        <select id="order">
+          <option value="row">Rows, left to right</option>
+          <option value="snake">Snake (boustrophedon)</option>
+          <option value="col">Columns, top to bottom</option>
+          <option value="spiral">Spiral from center</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="primary" id="gen">Generate</button>
+      <button class="ghost" id="rand">Random offset</button>
+      <button class="ghost" id="copy">Copy colors</button>
+      <button class="ghost" id="save">Open PNG</button>
+    </div>
+    <div class="status" id="status" role="status"></div>
+  </section>
+
+  <section class="card" aria-label="Result">
+    <h2>Result</h2>
+    <div class="stage" id="stage"><canvas id="cv" width="320" height="320"></canvas></div>
+    <div class="readout" id="readout"><span class="sw" style="background:transparent"></span><span>Hover or tap a cell to see its digits and color.</span></div>
+  </section>
+
+  <section class="card" aria-label="Digits and colors">
+    <h2>Digits used</h2>
+    <div class="digits" id="digits"></div>
+    <h2 style="margin-top:16px">First 40 colors</h2>
+    <div class="list" id="list"></div>
+  </section>
+</main>
+
+<script>
+(function () {
+  // ---------- Pi digits via Chudnovsky binary splitting (BigInt) ----------
+  function isqrt(n) {
+    if (n < 2n) return n;
+    let x = 1n << BigInt((n.toString(2).length + 1) >> 1);
+    for (;;) { const y = (x + n / x) >> 1n; if (y >= x) return x; x = y; }
+  }
+  function bs(a, b) {
+    if (b - a === 1n) {
+      let P, Q;
+      if (a === 0n) { P = 1n; Q = 1n; }
+      else { P = (6n*a - 5n) * (2n*a - 1n) * (6n*a - 1n); Q = a*a*a * 10939058860032000n; }
+      let T = P * (13591409n + 545140134n * a);
+      if (a & 1n) T = -T;
+      return [P, Q, T];
+    }
+    const m = (a + b) >> 1n;
+    const [P1, Q1, T1] = bs(a, m), [P2, Q2, T2] = bs(m, b);
+    return [P1 * P2, Q1 * Q2, Q2 * T1 + P1 * T2];
+  }
+  function computePi(digits) {
+    const guard = 12, D = digits + guard;
+    const N = BigInt(Math.ceil(D / 14.1816) + 2);
+    const [, Q, T] = bs(0n, N);
+    const one = 10n ** BigInt(D);
+    const sq = isqrt(10005n * one * one);
+    const pi = (Q * 426880n * sq) / T;
+    const s = pi.toString();               // "3141592..."
+    return s.slice(0, digits);             // includes the leading 3
+  }
+  let PI = "3141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117067";
+  const MAX_DIGITS = 400000;
+  function ensureDigits(n) {
+    if (n > MAX_DIGITS) n = MAX_DIGITS;
+    if (PI.length >= n) return;
+    PI = computePi(Math.min(MAX_DIGITS, Math.max(n, Math.ceil(PI.length * 1.5), 5000)));
+  }
+
+  // ---------- Color modes ----------
+  const pal10 = ["#1b1b1b","#d62728","#ff7f0e","#f2c200","#2ca02c","#17becf","#1f77b4","#7b4fd0","#e377c2","#f4f4f4"];
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const modes = {
+    rgb3: { name: "RGB · 9 digits (3 per channel)", dpc: 9, hint: "Each 3-digit group (000–999) is scaled to 0–255. Full color range.",
+      f: d => [0,3,6].map(i => Math.round(+d.substr(i,3) / 999 * 255)) },
+    rgb2: { name: "RGB · 6 digits (2 per channel)", dpc: 6, hint: "Each 2-digit pair (00–99) is scaled to 0–255.",
+      f: d => [0,2,4].map(i => Math.round(+d.substr(i,2) / 99 * 255)) },
+    hex: { name: "Hex · 6 digits literal (#123456)", dpc: 6, hint: "The six digits are used as a hex code as-is. Only digits 0–9 appear, so every channel tops out at 0x99 and colors lean dark.",
+      f: d => [0,2,4].map(i => parseInt(d.substr(i,2), 16)) },
+    hsl: { name: "HSL · 7 digits (hue 3, sat 2, light 2)", dpc: 7, hint: "Hue = first 3 digits mod 360, saturation and lightness 00–99 mapped to 20–100% and 20–80%.",
+      f: d => { const h = (+d.substr(0,3)) % 360, s = 20 + +d.substr(3,2) / 99 * 80, l = 20 + +d.substr(5,2) / 99 * 60; return hsl2rgb(h, s, l); } },
+    gray: { name: "Grayscale · 3 digits", dpc: 3, hint: "A 3-digit group (000–999) becomes a gray level.",
+      f: d => { const v = Math.round(+d / 999 * 255); return [v, v, v]; } },
+    pal: { name: "Digit palette · 1 digit per cell", dpc: 1, hint: "Each digit 0–9 maps to one of ten fixed colors, so you can read the digits straight off the image.",
+      f: d => hexToRgb(pal10[+d]) },
+    cmyk: { name: "CMYK · 8 digits (2 per ink)", dpc: 8, hint: "Four 2-digit values (00–99) become C, M, Y, K percentages, then convert to RGB.",
+      f: d => { const [c,m,y,k] = [0,2,4,6].map(i => +d.substr(i,2) / 99); return [255*(1-c)*(1-k), 255*(1-m)*(1-k), 255*(1-y)*(1-k)].map(Math.round); } }
+  };
+  function hexToRgb(h) { return [1,3,5].map(i => parseInt(h.substr(i,2), 16)); }
+  function hsl2rgb(h, s, l) {
+    s /= 100; l /= 100;
+    const k = n => (n + h / 30) % 12, a = s * Math.min(l, 1 - l);
+    const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+    return [f(0), f(8), f(4)].map(v => Math.round(v * 255));
+  }
+  function rgb2hsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const mx = Math.max(r,g,b), mn = Math.min(r,g,b), l = (mx + mn) / 2, d = mx - mn;
+    let h = 0, s = 0;
+    if (d) {
+      s = d / (1 - Math.abs(2*l - 1));
+      h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+      h = (h * 60 + 360) % 360;
+    }
+    return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
+  }
+  const hx = n => n.toString(16).padStart(2, "0");
+  function fmt(rgb, kind) {
+    const [r,g,b] = rgb;
+    if (kind === "rgb") return `rgb(${r}, ${g}, ${b})`;
+    if (kind === "hsl") { const [h,s,l] = rgb2hsl(r,g,b); return `hsl(${h}, ${s}%, ${l}%)`; }
+    if (kind === "dec") return String((r << 16) | (g << 8) | b);
+    return "#" + hx(r) + hx(g) + hx(b);
+  }
+
+  // ---------- Cell ordering ----------
+  function order(w, h, kind) {
+    const out = [];
+    if (kind === "col") { for (let x = 0; x < w; x++) for (let y = 0; y < h; y++) out.push([x, y]); }
+    else if (kind === "snake") { for (let y = 0; y < h; y++) for (let i = 0; i < w; i++) out.push([y % 2 ? w - 1 - i : i, y]); }
+    else if (kind === "spiral") {
+      let x = Math.floor((w - 1) / 2), y = Math.floor((h - 1) / 2), dx = 1, dy = 0, seg = 1, left = 1, turns = 0;
+      const total = w * h; let guard = 0;
+      while (out.length < total && guard++ < total * 8) {
+        if (x >= 0 && x < w && y >= 0 && y < h) out.push([x, y]);
+        x += dx; y += dy; left--;
+        if (left === 0) { [dx, dy] = [-dy, dx]; turns++; if (turns % 2 === 0) seg++; left = seg; }
+      }
+    } else { for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out.push([x, y]); }
+    return out;
+  }
+
+  // ---------- UI ----------
+  const $ = id => document.getElementById(id);
+  const modeSel = $("mode");
+  Object.keys(modes).forEach(k => { const o = document.createElement("option"); o.value = k; o.textContent = modes[k].name; modeSel.appendChild(o); });
+  const state = { cells: [], w: 0, h: 0, px: 0, dpc: 0, offset: 0, mode: "" };
+
+  function pills(id, items, getter, setter) {
+    const box = $(id);
+    items.forEach(it => {
+      const b = document.createElement("button");
+      b.type = "button"; b.textContent = it.label; b.setAttribute("aria-pressed", "false");
+      b.addEventListener("click", () => { setter(it.value); refreshPills(); generate(); });
+      b._v = it.value; b._get = getter; box.appendChild(b);
+    });
+  }
+  function refreshPills() {
+    document.querySelectorAll(".pills button").forEach(b => b.setAttribute("aria-pressed", String(String(b._get()) === String(b._v))));
+  }
+  pills("pxPresets", [1,2,4,8,10,20,32,50].map(v => ({ label: v + "px", value: v })), () => +$("px").value, v => $("px").value = v);
+  pills("sizePresets", [[4,4],[8,8],[16,16],[32,32],[64,64],[100,100],[16,9],[40,30]].map(([a,b]) => ({ label: a + "×" + b, value: a + "x" + b })),
+    () => $("w").value + "x" + $("h").value, v => { const [a,b] = v.split("x"); $("w").value = a; $("h").value = b; });
+  pills("offPresets", [0, 1, 100, 1000, 10000, 31415].map(v => ({ label: String(v), value: v })), () => +$("offset").value, v => $("offset").value = v);
+
+  function readInt(id, lo, hi, dflt) { let v = parseInt($(id).value, 10); if (!isFinite(v)) v = dflt; v = clamp(v, lo, hi); $(id).value = v; return v; }
+
+  function generate() {
+    const m = modes[modeSel.value];
+    $("modeHint").textContent = m.hint;
+    let w = readInt("w", 1, 300, 16), h = readInt("h", 1, 300, 16);
+    const px = readInt("px", 1, 200, 20);
+    let off = readInt("offset", 0, 100000, 0);
+    let note = "";
+    const room = MAX_DIGITS - off;
+    if (w * h * m.dpc > room) {
+      const cap = Math.max(1, Math.floor(room / m.dpc));
+      // shrink height first, keeping width
+      h = Math.max(1, Math.floor(cap / w));
+      if (h * w * m.dpc > room) { w = Math.max(1, Math.floor(cap / h)); }
+      $("w").value = w; $("h").value = h;
+      note = " (size reduced to fit the available digits)";
+    }
+    const need = off + w * h * m.dpc;
+    $("status").textContent = "Computing digits of π…";
+    setTimeout(() => {
+      const t0 = performance.now();
+      try { ensureDigits(need); } catch (e) { $("status").textContent = "Could not compute digits: " + e.message; return; }
+      const ord = order(w, h, $("order").value);
+      const cells = new Array(w * h);
+      ord.forEach(([x, y], i) => {
+        const start = off + i * m.dpc;
+        const d = PI.substr(start, m.dpc);
+        cells[y * w + x] = { start, d, rgb: m.f(d) };
+      });
+      Object.assign(state, { cells, w, h, px, dpc: m.dpc, offset: off, mode: modeSel.value });
+      draw();
+      const cv = $("cv");
+      $("status").textContent = `${w}×${h} cells · ${w*h*m.dpc} digits used (positions ${off}–${off + w*h*m.dpc - 1}) · canvas ${cv.width}×${cv.height}px${note}`;
+      showDigits(off, need);
+      showList(ord);
+      refreshPills();
+    }, 20);
+  }
+
+  function draw() {
+    const { cells, w, h, px } = state;
+    const cv = $("cv");
+    // keep canvas under browser limits
+    const eff = Math.max(1, Math.min(px, Math.floor(16000 / Math.max(w, h))));
+    cv.width = w * eff; cv.height = h * eff;
+    const ctx = cv.getContext("2d");
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      const c = cells[y * w + x].rgb;
+      ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+      ctx.fillRect(x * eff, y * eff, eff, eff);
+    }
+    cv.style.width = cv.width + "px"; cv.style.height = cv.height + "px";
+    state.eff = eff;
+  }
+
+  function showDigits(off, end) {
+    const shown = Math.min(end, off + 600);
+    const s = PI.slice(off, shown);
+    const pre = off > 0 ? "…" : "";
+    const first = Math.min(s.length, state.w * state.h * state.dpc);
+    $("digits").innerHTML = pre + s.replace(/^(\d)/, "$1") + (end > shown ? "… (" + (end - shown) + " more)" : "");
+    const dot = off === 0 ? "" : "";
+    if (off === 0) $("digits").innerHTML = "3." + s.slice(1) + (end > shown ? "… (" + (end - shown) + " more)" : "");
+  }
+
+  function showList(ord) {
+    const k = $("fmt").value, box = $("list");
+    box.innerHTML = "";
+    const n = Math.min(40, ord.length);
+    for (let i = 0; i < n; i++) {
+      const [x, y] = ord[i], c = state.cells[y * state.w + x];
+      const row = document.createElement("div");
+      row.innerHTML = `<i style="background:rgb(${c.rgb.join(",")})"></i><span>${c.d}</span><span>→ ${fmt(c.rgb, k)}</span>`;
+      box.appendChild(row);
+    }
+  }
+
+  function cellAt(ev) {
+    const cv = $("cv"), r = cv.getBoundingClientRect();
+    const t = ev.touches ? ev.touches[0] : ev;
+    const x = Math.floor((t.clientX - r.left) / r.width * state.w), y = Math.floor((t.clientY - r.top) / r.height * state.h);
+    if (x < 0 || y < 0 || x >= state.w || y >= state.h) return null;
+    return { x, y, c: state.cells[y * state.w + x] };
+  }
+  function inspect(ev) {
+    const hit = cellAt(ev); if (!hit) return;
+    const { x, y, c } = hit;
+    $("readout").innerHTML = `<span class="sw" style="background:rgb(${c.rgb.join(",")})"></span><span>cell (${x}, ${y}) · digits <b>${c.d}</b> at position ${c.start}<br>${fmt(c.rgb, $("fmt").value)}</span>`;
+  }
+  $("cv").addEventListener("mousemove", inspect);
+  $("cv").addEventListener("click", inspect);
+  $("cv").addEventListener("touchstart", inspect, { passive: true });
+
+  $("gen").addEventListener("click", generate);
+  $("rand").addEventListener("click", () => { $("offset").value = Math.floor(Math.random() * 50000); generate(); });
+  ["mode", "order"].forEach(id => $(id).addEventListener("change", generate));
+  $("fmt").addEventListener("change", () => { if (state.cells.length) showList(order(state.w, state.h, $("order").value)); });
+  ["px", "w", "h", "offset"].forEach(id => {
+    $(id).addEventListener("change", generate);
+    $(id).addEventListener("keydown", e => { if (e.key === "Enter") generate(); });
+  });
+
+  $("copy").addEventListener("click", async () => {
+    const k = $("fmt").value, ord = order(state.w, state.h, $("order").value);
+    const text = ord.map(([x, y]) => fmt(state.cells[y * state.w + x].rgb, k)).join("\n");
+    try { await navigator.clipboard.writeText(text); $("status").textContent = `Copied ${ord.length} colors.`; }
+    catch (e) { $("status").textContent = "Copy was blocked here. Select from the list below instead."; }
+  });
+  $("save").addEventListener("click", () => {
+    try {
+      const url = $("cv").toDataURL("image/png");
+      const w = window.open(); if (w) { w.document.write('<img src="' + url + '" style="image-rendering:pixelated">'); }
+      else $("status").textContent = "Pop-ups are blocked here. Right-click or long-press the image to save it.";
+    } catch (e) { $("status").textContent = "Right-click or long-press the image to save it."; }
+  });
+
+  generate();
+})();
+</script>
+</body>
+</html>

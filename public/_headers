@@ -1,0 +1,4 @@
+# File names are not content-hashed, so no long-lived caching: browsers revalidate with ETags after each deploy.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin

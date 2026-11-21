@@ -7,7 +7,10 @@ Chromatone generalises two single-file prototypes from `/programming/pi-notes`:
 
 The goal: a **welcome page** where the user picks a **series**, and then hears it (Music) or sees it (Colour) with the same tools for every series.
 
-## Decisions to confirm (recommendation first)
+## Decisions (confirmed 2026-11-21)
+
+The user chose plain JS modules, Workers static assets and the MIT license. Series-first flow and a fresh history were kept as proposed.
+
 
 1. **Stack: plain JavaScript ES modules, no build step**, served as static files from Cloudflare (see Deployment). Tests use `node --test`.
    - Why not Leptos now: the working code is JS. VexFlow and gmp-wasm are JS/WASM libraries. Most of the open questions are musical (which series and mappings sound good), and those are faster to answer in JS.

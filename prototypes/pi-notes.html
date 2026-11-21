@@ -1,0 +1,1654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pi Notes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Layout: controls (Scheme, Sound) on the left; header panel and music displays on the right. */
+:root {
+  --bg: #f1f4f7;
+  --panel: #ffffff;
+  --ink: #12202f;
+  --muted: #5b6b7b;
+  --line: #d5dde5;
+  --accent: #0b7a80;
+  --accent-ink: #ffffff;
+  --hot: #e08a00;
+  --v1: #0b7a80; --v2: #7a4fd0; --v3: #b0306e; --v4: #2f6fd0;
+  --display: "Bricolage Grotesque", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1722; --panel: #14222f; --ink: #e6edf3; --muted: #93a4b4;
+    --line: #26394a; --accent: #3fc1c6; --accent-ink: #062226; --hot: #ffb938;
+    --v1: #3fc1c6; --v2: #a98bf0; --v3: #f07fb0; --v4: #6fa4f5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1722; --panel: #14222f; --ink: #e6edf3; --muted: #93a4b4;
+  --line: #26394a; --accent: #3fc1c6; --accent-ink: #062226; --hot: #ffb938;
+  --v1: #3fc1c6; --v2: #a98bf0; --v3: #f07fb0; --v4: #6fa4f5;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 400 16px/1.5 var(--body); }
+/* Page grid: title across the top, controls column on the left, music stage on the right.
+   On desktop the page is exactly one screen tall; each column scrolls on its own. */
+main { max-width: 1280px; height: 100vh; margin: 0 auto; padding: 20px 16px 16px; display: grid; gap: 16px;
+  grid-template-columns: 340px minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "top top" "controls stage"; }
+.masthead { grid-area: top; }
+/* Controls column: Scheme and Sound stacked; scrolls when taller than the screen. */
+.controls { grid-area: controls; display: flex; flex-direction: column; gap: 16px; min-height: 0;
+  overflow-y: auto; overscroll-behavior: contain; padding: 4px; margin: -4px; }
+/* Stage: header panel, then digits, piano roll and sheet music stacked.
+   The sheet music card takes the leftover height; the stage scrolls only if the screen is too short. */
+.stage { grid-area: stage; display: flex; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; overflow-y: auto; }
+.stage > .card { flex: none; }
+/* Music card: one tab panel at a time, filling the stage's leftover height. */
+.stage > .music-card { flex: 1 0 320px; display: flex; flex-direction: column; min-height: 320px; }
+.music-card .tabpanel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.music-card #digitsBody { overflow-y: auto; }
+/* Chip boxes share the panel height (one box per instrument), each scrolling on its own. */
+.music-card #chipsWrap { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.music-card .chips { flex: 1 1 0; max-height: none; min-height: 64px; align-content: flex-start; }
+.music-card #roll { flex: 1; min-height: 160px; height: auto; }
+.music-card .sheet { flex: 1; min-height: 0; margin-top: 0; overflow-y: auto; scrollbar-gutter: stable; }
+/* Phones and narrow windows: one column, music before controls, normal page scrolling.
+   The score keeps its own scroll box, capped below the screen height. */
+@media (max-width: 899px) {
+  main { height: auto; padding-bottom: 48px; grid-template-columns: minmax(0, 1fr); grid-template-rows: none;
+    grid-template-areas: "top" "stage" "controls"; }
+  .controls, .stage { overflow: visible; padding: 0; margin: 0; }
+  .stage > .music-card { flex: none; min-height: 0; }
+  .music-card #roll { flex: none; height: 240px; }
+  .music-card .chips { flex: none; max-height: 150px; }
+  .music-card .sheet { max-height: 75vh; }
+}
+
+/* Header panel: [ Options | Play + info ]. */
+.head-panel { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 16px; }
+.head-play { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+.head-options { border-right: 1px solid var(--line); padding-right: 16px; min-width: 0; }
+@media (max-width: 599px) {
+  .head-panel { grid-template-columns: minmax(0, 1fr); }
+  .head-options { border-right: 0; padding-right: 0; border-bottom: 1px solid var(--line); padding-bottom: 14px; }
+}
+h1 { font: 700 34px/1.05 var(--display); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+h1 span { color: var(--accent); }
+.sub { margin: 6px 0 0; color: var(--muted); max-width: 52ch; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.card h2 { font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; }
+
+.transport { display: flex; align-items: center; gap: 12px; }
+button.play { font: 700 17px/1 var(--display); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 14px 26px; min-width: 120px; cursor: pointer; }
+button.play:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
+.progress { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.bar { height: 10px; border-radius: 6px; background: var(--line); overflow: hidden; }
+.fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.2s linear; }
+.progrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+button.ghost { font: 500 14px/1 var(--body); background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 9px 14px; cursor: pointer; }
+button.ghost:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.presets button { font: 500 13px/1 var(--mono); background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+.presets button:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
+button.play:disabled { opacity: 0.5; cursor: default; }
+/* Random start row: button, max select, "each play" checkbox. */
+.random-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.random-row select { width: auto; }
+.status { font: 400 13px/1.4 var(--mono); color: var(--muted); }
+
+.vlabel { font: 500 12px/1 var(--mono); color: var(--muted); margin: 12px 0 6px; display: flex; align-items: center; gap: 6px; }
+.vlabel:first-child { margin-top: 0; }
+.vlabel i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.chips { position: relative; max-height: 150px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 6px; padding: 2px; }
+.chip { display: flex; flex-direction: column; align-items: center; min-width: 58px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; font-family: var(--mono); line-height: 1.25; }
+.chip .dg { font-size: 15px; font-weight: 500; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
+.chip .nt { font-size: 13px; color: var(--ink); font-weight: 500; }
+.chip .du { font-size: 11px; color: var(--muted); }
+.chip.rest .nt { color: var(--muted); font-weight: 400; }
+.chip.pinned { border-style: dashed; border-color: var(--accent); }
+.chip.on { background: var(--hot); border-color: var(--hot); }
+.chip.on .dg, .chip.on .nt, .chip.on .du { color: #1a1204; }
+.range-note { margin: 8px 0 0; font: 400 12px/1.4 var(--mono); color: var(--muted); }
+
+canvas { display: block; width: 100%; height: 160px; }
+.cardhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.cardhead h2 { margin: 0; }
+/* Inline tools at the right of a card heading (e.g. Clef + Show). */
+.cardtools { display: flex; align-items: center; gap: 8px; }
+.cardtools select { width: auto; padding: 5px 8px; font-size: 14px; }
+/* Tab strip in the music card heading. */
+.music-card .cardhead { flex-wrap: wrap; row-gap: 8px; }
+.tabs { display: flex; gap: 4px; min-width: 0; max-width: 100%; overflow-x: auto; }
+.tabs button { white-space: nowrap; flex: none; }
+@media (max-width: 599px) { .tabs button { padding: 8px 6px; letter-spacing: 0.03em; } .tabs .long { display: none; } }
+.tabs button { font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted);
+  background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 8px 10px; cursor: pointer; }
+.tabs button[aria-selected="true"] { color: var(--ink); background: var(--bg); border-color: var(--line); }
+.tabs button:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink); font-weight: 500; }
+.check input { width: 20px; height: 20px; accent-color: var(--accent); }
+.sheet { overflow-x: auto; margin-top: 10px; }
+.sheet svg { display: block; }
+.sheet svg [fill="black"] { fill: var(--ink); }
+.sheet svg [stroke="black"], .sheet svg [stroke="#444"] { stroke: var(--ink); }
+.sheet svg .on * { fill: var(--hot) !important; stroke: var(--hot) !important; }
+.sheet .msg { font: 400 13px/1.4 var(--mono); color: var(--muted); margin: 0; }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+label { font-size: 13px; font-weight: 500; color: var(--muted); }
+select, input[type="number"], input[type="text"], textarea { font: 400 16px/1.3 var(--body); color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; }
+textarea { font-family: var(--mono); font-size: 14px; min-height: 92px; resize: vertical; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.scheme-note { margin: 0; font-size: 14px; color: var(--muted); }
+.err { margin: 4px 0 0; font: 400 12px/1.4 var(--mono); color: #b3261e; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .err { color: #ff8a80; } }
+:root[data-theme="dark"] .err { color: #ff8a80; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+<main>
+  <header class="masthead">
+    <h1>Pi <span>Notes</span></h1>
+    <p class="sub">Read the digits of pi as music. Pick a scheme for turning digits into notes, then press play.</p>
+  </header>
+
+  <div class="stage">
+  <section class="card head-panel" aria-label="Playback">
+    <div class="head-options">
+      <h2>Options</h2>
+      <div class="grid">
+        <div class="field">
+          <label for="lenMode">Length</label>
+          <select id="lenMode"><option value="notes">Notes</option><option value="time">Time</option><option value="infinite">Infinite (until Stop)</option></select>
+        </div>
+        <div class="field" id="rowCount">
+          <label for="count">Notes to play</label>
+          <input type="number" id="count" min="4" max="128" value="24">
+        </div>
+        <div class="field" id="rowDuration" hidden>
+          <label for="duration">Time (m:ss)</label>
+          <input type="text" id="duration" value="1:00" inputmode="numeric" autocomplete="off" spellcheck="false">
+          <p class="err" id="durErr" hidden></p>
+        </div>
+        <div class="field wide">
+          <label for="start">Start at digit (0 is the 3). Type 4M, 250k or 4,000,000.</label>
+          <input type="text" id="start" value="0" inputmode="text" autocomplete="off" spellcheck="false">
+          <div class="presets" id="presets">
+            <button type="button" data-v="0">0</button><button type="button" data-v="1000">1,000</button><button type="button" data-v="100000">100,000</button><button type="button" data-v="1000000">1M</button><button type="button" data-v="4000000">4M</button><button type="button" data-v="10000000">10M</button><button type="button" data-v="20000000">20M</button>
+          </div>
+          <p class="err" id="startErr" hidden></p>
+          <div class="random-row">
+            <button class="ghost" id="randomBtn" type="button">🎲 Random</button>
+            <label for="randomMax">up to</label>
+            <select id="randomMax">
+              <option value="20000">20k</option><option value="100000">100k</option><option value="1000000" selected>1M</option><option value="10000000">10M</option><option value="20000000">20M</option>
+            </select>
+            <label class="check" for="randomEach"><input type="checkbox" id="randomEach"> Random each play</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="head-play">
+      <div class="transport">
+        <button class="play" id="play" type="button">Play</button>
+        <div class="status" id="status" aria-live="polite"></div>
+      </div>
+      <div class="progress" id="prog" hidden>
+        <div class="bar" role="progressbar" aria-label="Computing digits of pi" aria-valuemin="0" aria-valuemax="100" id="bar"><div class="fill" id="fill"></div></div>
+        <div class="progrow"><div class="status" id="progText"></div><button class="ghost" id="cancel" type="button">Cancel</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card music-card" aria-label="Music">
+    <div class="cardhead">
+      <div class="tabs" role="tablist" aria-label="Music views" id="tabs">
+        <button type="button" role="tab" id="tab-digits" data-tab="digits" aria-controls="digitsBody" aria-selected="true">Digits<span class="long"> &rarr; notes</span></button>
+        <button type="button" role="tab" id="tab-roll" data-tab="roll" aria-controls="rollBody" aria-selected="false" tabindex="-1">Piano roll</button>
+        <button type="button" role="tab" id="tab-sheet" data-tab="sheet" aria-controls="sheetBody" aria-selected="false" tabindex="-1">Sheet music</button>
+      </div>
+      <div class="cardtools" id="sheetTools" hidden>
+        <label for="clef">Clef</label>
+        <select id="clef"><option value="auto">Automatic</option><option value="treble">Treble</option><option value="bass">Bass</option></select>
+        <button type="button" class="ghost" id="dlXml" title="Save the score as MusicXML (opens in MuseScore and other notation programs)">Download MusicXML</button>
+      </div>
+    </div>
+    <div class="tabpanel" id="digitsBody" role="tabpanel" aria-labelledby="tab-digits">
+      <div id="chipsWrap"></div>
+      <p class="range-note" id="rangeNote"></p>
+    </div>
+    <div class="tabpanel" id="rollBody" role="tabpanel" aria-labelledby="tab-roll" hidden>
+      <canvas id="roll" role="img" aria-label="Piano roll of the generated melody"></canvas>
+    </div>
+    <div class="tabpanel" id="sheetBody" role="tabpanel" aria-labelledby="tab-sheet" hidden>
+      <div class="sheet" id="sheet"></div>
+    </div>
+  </section>
+  </div>
+
+  <aside class="controls" aria-label="Controls">
+  <section class="card" aria-label="Scheme">
+    <h2>Scheme</h2>
+    <div class="grid">
+      <div class="field wide">
+        <label for="scheme">How digits become notes</label>
+        <select id="scheme">
+          <option value="codes">Codes (groups of digits)</option>
+          <option value="degrees">One digit = one scale step</option>
+          <option value="pairs">Pairs: pitch + length</option>
+          <option value="steps">Digits as melodic steps</option>
+        </select>
+      </div>
+      <p class="scheme-note wide field" id="schemeNote"></p>
+      <div class="field" id="rowCodeLen">
+        <label for="codeLen">Digits per code</label>
+        <select id="codeLen"><option>2</option><option>3</option><option selected>4</option></select>
+      </div>
+      <div class="field" id="rowLen">
+        <label for="fixedLen">Note length</label>
+        <select id="fixedLen"><option value="0.5">Eighth</option><option value="1" selected>Quarter</option><option value="2">Half</option></select>
+      </div>
+      <div class="field" id="rowRange">
+        <label for="range">Range (octaves)</label>
+        <select id="range"><option>1</option><option selected>2</option><option>3</option></select>
+      </div>
+      <div class="field wide" id="rowOver">
+        <label for="over" id="overLabel">Pinned 4-digit codes (one per line: code = note or rest, then length)</label>
+        <textarea id="over" spellcheck="false">3141 = C4 1/2
+1459 = rest 1/4
+2635 = Bb3 1/4</textarea>
+        <p class="err" id="overErr" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Sound">
+    <h2>Sound</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="key">Key</label>
+        <select id="key"></select>
+      </div>
+      <div class="field">
+        <label for="scale">Scale</label>
+        <select id="scale"></select>
+      </div>
+      <div class="field wide">
+        <label for="nv">Number of instruments</label>
+        <select id="nv"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      </div>
+      <div class="grid wide" id="voiceRows" style="grid-column:1 / -1"></div>
+      <div class="field wide">
+        <label for="tempo">Tempo: <span id="tempoOut">110</span> BPM</label>
+        <input type="range" id="tempo" min="40" max="200" value="110">
+      </div>
+    </div>
+  </section>
+  </aside>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/vexflow@4.2.5/build/cjs/vexflow.js"></script>
+<script>
+// <pure>
+const NAMES = ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'];
+const SCALES = {
+  'Major': [0,2,4,5,7,9,11],
+  'Natural minor': [0,2,3,5,7,8,10],
+  'Dorian': [0,2,3,5,7,9,10],
+  'Major pentatonic': [0,2,4,7,9],
+  'Minor pentatonic': [0,3,5,7,10],
+  'Blues': [0,3,5,6,7,10],
+  'Whole tone': [0,2,4,6,8,10],
+  'Chromatic': [0,1,2,3,4,5,6,7,8,9,10,11]
+};
+const PAIR_LEN = [0.25,0.5,0.5,0.5,1,1,1,1.5,2,3];
+const CODE_LEN = [1,0.5,1,2,0.5,1,0.5];
+const STEPS = [0,1,2,3,4,-1,-2,-3,-4,null];
+
+function computePi(n) {
+  const one = 10n ** BigInt(n + 12);
+  const acot = (x) => {
+    const X = BigInt(x), X2 = X * X;
+    let term = one / X, sum = term, k = 1n, sign = -1n;
+    while (term > 0n) { term /= X2; k += 2n; sum += sign * (term / k); sign = -sign; }
+    return sum;
+  };
+  return (4n * (4n * acot(5) - acot(239))).toString().slice(0, n);
+}
+function midiName(m) { return NAMES[m % 12] + (Math.floor(m / 12) - 1); }
+function noteToMidi(s) {
+  const m = /^([A-Ga-g])([#b]?)(-?\d)$/.exec(s);
+  if (!m) return null;
+  const base = { C:0, D:2, E:4, F:5, G:7, A:9, B:11 }[m[1].toUpperCase()];
+  const acc = m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0;
+  return 12 * (parseInt(m[3], 10) + 1) + base + acc;
+}
+function fmtLen(b) {
+  const map = { 0.25:'1/16', 0.5:'1/8', 1:'1/4', 1.5:'3/8', 2:'1/2', 3:'3/4', 4:'1' };
+  return map[b] || (b / 4).toFixed(2);
+}
+// Lengths are kept on a sixteenth-note grid so the score and the sound agree.
+function quant(b) { return Math.max(0.25, Math.round(b * 4) / 4); }
+function parseOverrides(text, codeLen) {
+  const map = {}, errors = [];
+  text.split('\n').forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line) return;
+    const m = /^(\d+)\s*=\s*(rest|[A-Ga-g][#b]?-?\d)\s*(\d+(?:\/\d+)?)?$/i.exec(line);
+    if (!m) { errors.push('Line ' + (i + 1) + ': use  code = note|rest [length], e.g. 2635 = Bb3 1/4'); return; }
+    if (m[1].length !== codeLen) { errors.push('Line ' + (i + 1) + ': ' + m[1] + ' is not ' + codeLen + ' digits, so it is ignored'); return; }
+    let beats = 1;
+    if (m[3]) {
+      const [a, b] = m[3].split('/').map(Number);
+      beats = (b ? a / b : a) * 4;
+      if (!(beats >= 0.125 && beats <= 16)) { errors.push('Line ' + (i + 1) + ': length out of range'); return; }
+    }
+    const isRest = m[2].toLowerCase() === 'rest';
+    const midi = isRest ? null : noteToMidi(m[2]);
+    if (!isRest && midi === null) { errors.push('Line ' + (i + 1) + ': unknown note ' + m[2]); return; }
+    map[m[1]] = { rest: isRest, midi, beats: quant(beats) };
+  });
+  return { map, errors };
+}
+/* ---- Note generation ----
+   s = settings for ONE voice (scheme, codeLen, fixedLen, range, root, scale, oct).
+   A reader { pos, cur } is the only state: the next digit to read and, for the
+   "steps" scheme, the current scale position. Reading is resumable from any reader. */
+function chunkSize(s) { return s.scheme === 'pairs' ? 2 : s.scheme === 'codes' ? s.codeLen : 1; }
+function newReader(s, pos) { return { pos, cur: Math.floor(SCALES[s.scale].length * s.range / 2) }; }
+// Turn one chunk of digits into { rest, midi, beats[, pinned] }. Updates rd.cur for "steps".
+function decodeChunk(s, d, overrides, rd) {
+  const sc = SCALES[s.scale], n = sc.length;
+  const rootMidi = 12 * (s.oct + 1) + s.root;
+  const deg = (k) => rootMidi + 12 * Math.floor(k / n) + sc[((k % n) + n) % n];
+  const P = n * s.range;
+  if (s.scheme === 'degrees') return { rest: false, midi: deg(+d), beats: s.fixedLen };
+  if (s.scheme === 'pairs') {
+    const a = +d[0], b = +d[1];
+    return a === 0 ? { rest: true, midi: null, beats: PAIR_LEN[b] } : { rest: false, midi: deg(a - 1), beats: PAIR_LEN[b] };
+  }
+  if (s.scheme === 'steps') {
+    const st = STEPS[+d];
+    if (st === null) return { rest: true, midi: null, beats: s.fixedLen };
+    rd.cur = Math.max(0, Math.min(P, rd.cur + st));
+    return { rest: false, midi: deg(rd.cur), beats: s.fixedLen };
+  }
+  const o = overrides[d];
+  if (o) return { rest: o.rest, midi: o.midi, beats: o.beats, pinned: true };
+  const c = parseInt(d, 10), beats = CODE_LEN[c % 7];
+  return c % 9 === 0 ? { rest: true, midi: null, beats } : { rest: false, midi: deg(Math.floor(c / 9) % P), beats };
+}
+// Read the next event and advance the reader, or return null when PI has too few digits.
+function readEvent(s, PI, overrides, rd) {
+  const chunk = chunkSize(s);
+  if (rd.pos + chunk > PI.length) return null;
+  const d = PI.slice(rd.pos, rd.pos + chunk);
+  const at = rd.pos;
+  rd.pos += chunk;
+  const e = decodeChunk(s, d, overrides, rd);
+  e.at = at;
+  e.digits = d;
+  e.label = e.rest ? 'rest' : midiName(e.midi);
+  return e;
+}
+// "Notes" mode: voice 1 plays s.count events; each later voice reads the digits after the
+// previous one and fills the same number of beats (its last note is cut to fit).
+function buildCountVoices(s, PI, overrides, octs) {
+  const voices = [];
+  let pos = s.start, target = null;
+  octs.forEach((oct, k) => {
+    const vs = { ...s, oct }, rd = newReader(vs, pos), events = [];
+    let b = 0;
+    while (target == null ? events.length < s.count : b < target - 1e-9) {
+      const e = readEvent(vs, PI, overrides, rd);
+      if (!e) break;
+      if (target != null && b + e.beats > target) e.beats = target - b;
+      e.startBeat = b;
+      b += e.beats;
+      events.push(e);
+    }
+    voices.push({ events, total: b });
+    if (k === 0) target = b;
+    pos = rd.pos;
+  });
+  return { voices, nextPos: pos };
+}
+/* "Time"/"Infinite" modes: the piece is generated one 4/4 bar at a time.
+   In each bar, voice 1 reads digits until its notes reach the barline, then voice 2
+   reads the following digits, and so on. Notes may cross the barline (not cut); that
+   voice simply starts later in the next bar. Only `limit` (total beats) cuts a note. */
+function newStream(s, octs) {
+  return { pos: s.start, bar: 0, voices: octs.map((oct) => { const vs = { ...s, oct }; return { s: vs, rd: newReader(vs, s.start), end: 0 }; }) };
+}
+// Generate the next bar. Returns { events: [per-voice arrays], barEnd, done }, or null
+// (stream unchanged) when PI does not have enough digits yet.
+function buildBar(st, PI, overrides, limit = Infinity) {
+  const barEnd = Math.min((st.bar + 1) * 4, limit);
+  const snap = { pos: st.pos, vs: st.voices.map((v) => ({ end: v.end, pos: v.rd.pos, cur: v.rd.cur })) };
+  const out = st.voices.map(() => []);
+  for (let k = 0; k < st.voices.length; k++) {
+    const v = st.voices[k];
+    v.rd.pos = st.pos;
+    while (v.end < barEnd - 1e-9) {
+      const e = readEvent(v.s, PI, overrides, v.rd);
+      if (!e) {
+        st.pos = snap.pos;
+        st.voices.forEach((w, i) => { w.end = snap.vs[i].end; w.rd.pos = snap.vs[i].pos; w.rd.cur = snap.vs[i].cur; });
+        return null;
+      }
+      if (v.end + e.beats > limit) e.beats = limit - v.end;
+      e.startBeat = v.end;
+      v.end += e.beats;
+      out[k].push(e);
+    }
+    st.pos = v.rd.pos;
+  }
+  st.bar++;
+  return { events: out, barEnd, done: barEnd >= limit - 1e-9 };
+}
+// Split a length (in beats) into printable note values.
+function decompose(x) {
+  const out = [];
+  for (const d of [4, 3, 2, 1.5, 1, 0.75, 0.5, 0.25]) {
+    while (x >= d - 1e-9) { out.push(d); x -= d; }
+  }
+  return out;
+}
+// Cut events into 4/4 bars. Notes that cross a barline become tied pieces.
+function toMeasures(evs) {
+  if (!evs.length) return [];
+  const last = evs[evs.length - 1];
+  return measuresInRange(evs, 0, Math.ceil((last.startBeat + last.beats) / 4 - 1e-9) * 4);
+}
+/* Cut the part of `evs` (contiguous, with startBeat) that lies in [fromBeat, toBeat) into
+   4/4 bars. fromBeat/toBeat are on barlines. Notes crossing a barline inside the range become
+   tied pieces; uncovered time becomes rests. ei = off + index in evs (-1 for filler rests). */
+function measuresInRange(evs, fromBeat, toBeat, off = 0) {
+  const nBars = Math.round((toBeat - fromBeat) / 4);
+  const bars = Array.from({ length: nBars }, () => []);
+  const put = (a, b, mk) => {
+    const out = [];
+    while (b - a > 1e-9) {
+      const bi = Math.floor((a - fromBeat) / 4 + 1e-9), barEnd = fromBeat + 4 * (bi + 1), take = Math.min(b, barEnd) - a;
+      decompose(take).forEach((d) => { const p = mk(d); bars[bi].push(p); out.push(p); });
+      a += take;
+    }
+    return out;
+  };
+  const rest = (d) => ({ ei: -1, rest: true, midi: null, beats: d, tie: false });
+  let cur = fromBeat;
+  evs.forEach((e, i) => {
+    const a = Math.max(e.startBeat, fromBeat), b = Math.min(e.startBeat + e.beats, toBeat);
+    if (b - a <= 1e-9) return;
+    if (a - cur > 1e-9) put(cur, a, rest);
+    const pieces = put(a, b, (d) => ({ ei: off + i, rest: e.rest, midi: e.midi, beats: d, tie: false }));
+    if (!e.rest) pieces.forEach((p, j) => { p.tie = j < pieces.length - 1; });
+    cur = b;
+  });
+  if (toBeat - cur > 1e-9) put(cur, toBeat, rest);
+  return bars;
+}
+// Time/Infinite: rebuild a streamed piece from its start up to `limit` beats (finite), as full
+// per-voice event lists. Deterministic, so it matches what played. null if PI runs out.
+function regenerateVoices(s, PI, overrides, octs, limit) {
+  const st = newStream(s, octs), evs = octs.map(() => []);
+  for (;;) {
+    const r = buildBar(st, PI, overrides, limit);
+    if (!r) return null;
+    r.events.forEach((list, k) => list.forEach((e) => evs[k].push(e)));
+    if (r.done || r.barEnd >= limit - 1e-9) return evs;
+  }
+}
+// Infinite export length: the played beats rounded up to the next barline (at least one bar).
+const exportBeats = (played) => Math.max(4, Math.ceil(played / 4 - 1e-9) * 4);
+// Clef for a voice: the user's choice, or (auto) bass when the average pitch is below A3.
+function chooseClef(events, setting) {
+  if (setting !== 'auto') return setting;
+  const m = events.filter((e) => !e.rest).map((e) => e.midi);
+  return m.length && m.reduce((a, b) => a + b, 0) / m.length < 57 ? 'bass' : 'treble';
+}
+/* ---- MusicXML export ----
+   score = { title, subtitle, bpm, parts: [{ name, program, clef: 'treble'|'bass', bars }] },
+   bars as from toMeasures()/measuresInRange(). One quarter = 4 divisions (sixteenth grid). */
+const XML_DIVISIONS = 4;
+// beats -> [MusicXML note type, dots]
+const XML_TYPES = { 4:['whole',0], 3:['half',1], 2:['half',0], 1.5:['quarter',1], 1:['quarter',0], 0.75:['eighth',1], 0.5:['eighth',0], 0.25:['16th',0] };
+function xmlEscape(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+// Pad every part with whole-bar rests to the longest part's bar count.
+function padBars(partsBars) {
+  const n = Math.max(0, ...partsBars.map((b) => b.length));
+  return partsBars.map((b) => b.concat(Array.from({ length: n - b.length }, () => [{ ei: -1, rest: true, midi: null, beats: 4, tie: false }])));
+}
+// MIDI number -> <pitch>, spelled with NAMES (flats), like the on-screen score.
+function pitchXML(midi) {
+  const name = NAMES[midi % 12];
+  return '<pitch><step>' + name[0] + '</step>' + (name.length > 1 ? '<alter>-1</alter>' : '') +
+    '<octave>' + (Math.floor(midi / 12) - 1) + '</octave></pitch>';
+}
+// One bar piece -> <note>. tieStop: the previous piece of this part was tied into this one.
+function noteXML(p, tieStop, wholeBarRest) {
+  const [type, dots] = XML_TYPES[p.beats];
+  const ties = p.rest ? [] : [tieStop && 'stop', p.tie && 'start'].filter(Boolean);
+  return '<note>' +
+    (p.rest ? (wholeBarRest ? '<rest measure="yes"/>' : '<rest/>') : pitchXML(p.midi)) +
+    '<duration>' + p.beats * XML_DIVISIONS + '</duration>' +
+    ties.map((t) => '<tie type="' + t + '"/>').join('') +
+    '<voice>1</voice>' +
+    (wholeBarRest ? '' : '<type>' + type + '</type>' + '<dot/>'.repeat(dots)) +
+    (ties.length ? '<notations>' + ties.map((t) => '<tied type="' + t + '"/>').join('') + '</notations>' : '') +
+    '</note>';
+}
+// <attributes> and tempo mark for a part's first bar.
+function firstBarXML(part, bpm) {
+  const clef = part.clef === 'bass' ? '<sign>F</sign><line>4</line>' : '<sign>G</sign><line>2</line>';
+  return '<attributes><divisions>' + XML_DIVISIONS + '</divisions><key><fifths>0</fifths></key>' +
+    '<time><beats>4</beats><beat-type>4</beat-type></time><clef>' + clef + '</clef></attributes>' +
+    '<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>' + bpm +
+    '</per-minute></metronome></direction-type><sound tempo="' + bpm + '"/></direction>';
+}
+// One part's bars -> <part>; tie state carries across barlines.
+function partXML(part, k, bpm) {
+  let tied = false;
+  const measures = part.bars.map((bar, i) => {
+    const whole = bar.length === 1 && bar[0].rest && bar[0].beats === 4;
+    const notes = bar.map((p) => { const x = noteXML(p, tied, whole); if (!p.rest) tied = p.tie; return x; }).join('');
+    return '<measure number="' + (i + 1) + '">' + (i === 0 ? firstBarXML(part, bpm) : '') + notes + '</measure>';
+  });
+  return '<part id="P' + (k + 1) + '">' + measures.join('\n') + '</part>';
+}
+// <part-list> with a General MIDI program per part.
+function partListXML(parts) {
+  return '<part-list>' + parts.map((p, k) => {
+    const id = 'P' + (k + 1), name = xmlEscape(p.name);
+    return '<score-part id="' + id + '"><part-name>' + name + '</part-name>' +
+      '<score-instrument id="' + id + '-I1"><instrument-name>' + name + '</instrument-name></score-instrument>' +
+      '<midi-instrument id="' + id + '-I1"><midi-channel>' + (k + 1) + '</midi-channel><midi-program>' + p.program +
+      '</midi-program></midi-instrument></score-part>';
+  }).join('') + '</part-list>';
+}
+function toMusicXML(score) {
+  return '<?xml version="1.0" encoding="UTF-8" standalone="no"?>\n' +
+    '<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">\n' +
+    '<score-partwise version="4.0">\n' +
+    '<work><work-title>' + xmlEscape(score.title) + '</work-title></work>\n' +
+    '<movement-title>' + xmlEscape(score.subtitle) + '</movement-title>\n' +
+    '<identification><encoding><software>Pi Notes</software></encoding></identification>\n' +
+    partListXML(score.parts) + '\n' +
+    score.parts.map((p, k) => partXML(p, k, score.bpm)).join('\n') + '\n' +
+    '</score-partwise>\n';
+}
+const START_MAX = 20000000;
+// Uniform random start digit in [0, max]; rnd is injectable for tests.
+function randomStart(max, rnd = Math.random) {
+  return Math.floor(rnd() * (Math.min(max, START_MAX) + 1));
+}
+// "4M", "250k", "4,000,000" -> integer, or null when it is not a number.
+function parseStart(text) {
+  const m = /^(\d+(?:\.\d+)?)\s*([kKmM]?)$/.exec(String(text).replace(/[,_\s]/g, ''));
+  if (!m) return null;
+  const mult = { '': 1, k: 1e3, m: 1e6 }[m[2].toLowerCase()];
+  return Math.floor(parseFloat(m[1]) * mult + 1e-6);
+}
+/* ---- Playback length (Time / Infinite modes) ---- */
+const DURATION_MIN = 5, DURATION_MAX = 99 * 60 + 59;
+// "1:30" -> 90, "90" -> 90, "1:02:03" -> 3723 seconds; null when not a time.
+function parseDuration(text) {
+  const t = String(text).trim();
+  if (!/^\d+(:\d{1,2}){0,2}$/.test(t)) return null;
+  const parts = t.split(':').map(Number);
+  if (parts.slice(1).some((p) => p > 59)) return null;
+  return parts.reduce((acc, p) => acc * 60 + p, 0);
+}
+// 75 -> "1:15", 3723 -> "1:02:03".
+function fmtTime(sec) {
+  sec = Math.max(0, Math.floor(sec));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, s = sec % 60;
+  const ss = String(s).padStart(2, '0');
+  return h ? h + ':' + String(m).padStart(2, '0') + ':' + ss : m + ':' + ss;
+}
+// Seconds at a tempo -> beats, on the sixteenth-note grid.
+function beatsForSeconds(sec, bpm) { return Math.max(0.25, Math.round(sec * bpm / 60 * 4) / 4); }
+const mean = (xs) => xs.reduce((a, b) => a + b, 0) / xs.length;
+// Expected digits one voice reads per beat (ignores pinned codes).
+function digitsPerBeat(s) {
+  if (s.scheme === 'codes') return s.codeLen / mean(CODE_LEN);
+  if (s.scheme === 'pairs') return 2 / mean(PAIR_LEN);
+  return 1 / s.fixedLen;
+}
+// Digits to have computed (past the start) for nv voices to play `beats` beats, with 50% headroom.
+function streamDigits(s, nv, beats) { return Math.ceil(beats * nv * digitsPerBeat(s) * 1.5) + 300; }
+function digitsNeeded(s, nv) {
+  const chunk = s.scheme === 'pairs' ? 2 : s.scheme === 'codes' ? s.codeLen : 1;
+  return s.start + nv * s.count * chunk * 3 + 300;
+}
+// Pi by the Chudnovsky series with binary splitting, on BigInt. Returns "3141592...".
+// This function is also copied into a Web Worker, so it must stay self-contained.
+// Chudnovsky binary splitting on BigInt, with progress callback. Shared by worker + node benchmark.
+function chudnovsky(digits, report) {
+  const C3_OVER_24 = 10939058860032000n;
+  const N = Math.floor(digits / 14.181647462725477) + 2;
+  const wc = new Map();
+  const W = (n) => {
+    if (n <= 1) return 1;
+    let v = wc.get(n);
+    if (v === undefined) { v = n * Math.log2(n + 1) + W(n >> 1) + W(n - (n >> 1)); wc.set(n, v); }
+    return v;
+  };
+  const totalW = W(N);
+  let done = 0, last = 0;
+  const tick = () => { const p = 0.72 * done / totalW; if (p - last >= 0.004) { last = p; report(p, 'Summing the series'); } };
+  const bs = (a, b, needP) => {
+    if (b - a === 1) {
+      let P, Q;
+      if (a === 0) { P = 1n; Q = 1n; }
+      else { const A = BigInt(a); P = (6n * A - 5n) * (2n * A - 1n) * (6n * A - 1n); Q = A * A * A * C3_OVER_24; }
+      let T = P * (13591409n + 545140134n * BigInt(a));
+      if (a & 1) T = -T;
+      done += 1; tick();
+      return [P, Q, T];
+    }
+    const m = (a + b) >> 1;
+    const L = bs(a, m, true), R = bs(m, b, needP);
+    const out = [needP ? L[0] * R[0] : 0n, L[1] * R[1], R[1] * L[2] + L[0] * R[2]];
+    done += W(b - a) - W(m - a) - W(b - m); tick();
+    return out;
+  };
+  const isqrt = (n) => {
+    if (n < (1n << 52n)) return BigInt(Math.floor(Math.sqrt(Number(n))));
+    const bl = n.toString(16).length * 4;
+    const k = BigInt(bl >> 2);
+    let x = (isqrt(n >> (2n * k)) + 1n) << k;
+    for (;;) { const y = (x + n / x) >> 1n; if (y >= x) return x; x = y; }
+  };
+  const [, Q, T] = bs(0, N, false);
+  report(0.74, 'Square root');
+  const sq = isqrt(10005n * 10n ** (2n * BigInt(digits)));
+  report(0.86, 'Dividing');
+  const pi = (Q * 426880n * sq) / T;
+  report(0.94, 'Writing digits');
+  return pi.toString();
+}
+// The same Chudnovsky series on GMP integers (gmp-wasm's low-level mpz binding `b`), for browsers
+// whose BigInt is too small (Firefox caps BigInt at 2^20 bits, about 157k digits here).
+// Returns the same "3141592..." string. Intermediates are freed as soon as they are combined.
+// Also copied into the Web Worker, so it must stay self-contained.
+function chudnovskyGmp(b, digits, report) {
+  const N = Math.floor(digits / 14.181647462725477) + 2;
+  const wc = new Map();
+  const W = (n) => {
+    if (n <= 1) return 1;
+    let v = wc.get(n);
+    if (v === undefined) { v = n * Math.log2(n + 1) + W(n >> 1) + W(n - (n >> 1)); wc.set(n, v); }
+    return v;
+  };
+  const totalW = W(N);
+  let done = 0, last = 0;
+  const tick = () => { const p = 0.72 * done / totalW; if (p - last >= 0.004) { last = p; report(p, 'Summing the series'); } };
+  const nz = () => { const p = b.mpz_t(); b.mpz_init(p); return p; };
+  const free = (...ps) => ps.forEach((p) => { if (p) { b.mpz_clear(p); b.mpz_t_free(p); } });
+  const C = nz();
+  b.mpz_set_string(C, '10939058860032000', 10);
+  const bs = (lo, hi, needP) => {
+    if (hi - lo === 1) {
+      const P = nz(), Q = nz(), T = nz();
+      if (lo === 0) { b.mpz_set_ui(P, 1); b.mpz_set_ui(Q, 1); }
+      else {
+        b.mpz_set_ui(P, 6 * lo - 5); b.mpz_mul_ui(P, P, 2 * lo - 1); b.mpz_mul_ui(P, P, 6 * lo - 1);
+        b.mpz_set_ui(Q, lo); b.mpz_mul_ui(Q, Q, lo); b.mpz_mul_ui(Q, Q, lo); b.mpz_mul(Q, Q, C);
+      }
+      b.mpz_set_ui(T, lo); b.mpz_mul_ui(T, T, 545140134); b.mpz_add_ui(T, T, 13591409); b.mpz_mul(T, T, P);
+      if (lo & 1) b.mpz_neg(T, T);
+      done += 1; tick();
+      return [P, Q, T];
+    }
+    const m = (lo + hi) >> 1;
+    const [Lp, Lq, Lt] = bs(lo, m, true), [Rp, Rq, Rt] = bs(m, hi, needP);
+    b.mpz_mul(Lt, Lt, Rq); b.mpz_mul(Rt, Rt, Lp); b.mpz_add(Lt, Lt, Rt);  // T = Rq*Lt + Lp*Rt
+    b.mpz_mul(Lq, Lq, Rq);                                                // Q = Lq*Rq
+    if (needP) b.mpz_mul(Lp, Lp, Rp);                                     // P = Lp*Rp
+    free(Rp, Rq, Rt);
+    done += W(hi - lo) - W(m - lo) - W(hi - m); tick();
+    if (!needP) { free(Lp); return [null, Lq, Lt]; }
+    return [Lp, Lq, Lt];
+  };
+  const [P, Q, T] = bs(0, N, false);
+  free(P, C);
+  report(0.74, 'Square root');
+  const sq = nz();
+  b.mpz_ui_pow_ui(sq, 10, 2 * digits); b.mpz_mul_ui(sq, sq, 10005); b.mpz_sqrt(sq, sq);
+  report(0.86, 'Dividing');
+  b.mpz_mul(Q, Q, sq); b.mpz_mul_ui(Q, Q, 426880); b.mpz_tdiv_q(Q, Q, T);
+  free(sq, T);
+  report(0.94, 'Writing digits');
+  const s = b.mpz_to_string(Q, 10);
+  free(Q);
+  return s;
+}
+// </pure>
+
+const INSTRUMENTS = [
+  ['piano','Piano'], ['organ','Organ'], ['harp','Harp'], ['marimba','Marimba'], ['bells','Bells'],
+  ['flute','Flute'], ['strings','Strings'], ['guitar','Guitar'], ['euphonium','Euphonium'], ['bass','Bass'], ['lead','Square lead'], ['sine','Pure sine']
+];
+// General MIDI program (1-based) per instrument, for MusicXML export; nearest patch where GM has none.
+const GM_PROGRAM = { piano:1, organ:20, harp:47, marimba:13, bells:15, flute:74, strings:49, guitar:25, euphonium:59, bass:33, lead:81, sine:80 };
+const VDEF = [{ inst:'piano', oct:3 }, { inst:'bass', oct:2 }, { inst:'bells', oct:4 }, { inst:'strings', oct:3 }];
+const vstate = VDEF.map((v) => ({ ...v }));
+
+const $ = (id) => document.getElementById(id);
+let PI = computePi(3000);
+let pendingNeed = 0, computing = false, worker = null, lastStart = 0;
+NAMES.forEach((n, i) => { const o = document.createElement('option'); o.value = i; o.textContent = n; $('key').appendChild(o); });
+Object.keys(SCALES).forEach((k) => { const o = document.createElement('option'); o.textContent = k; $('scale').appendChild(o); });
+
+const NOTES = {
+  codes: 'Digits are grouped into codes. A multiple of 9 is a rest. Otherwise the code divided by 9 picks a pitch in range, and the code modulo 7 picks the length. Pinned codes below override this rule; pinned chips have a dashed outline.',
+  degrees: 'Each digit is a step on the scale: 0 is the key note, 7 is the key note one octave up (in a seven-note scale). Every note has the same length.',
+  pairs: 'Digits are read in twos. The first picks the pitch (0 is a rest, 1 to 9 are scale steps). The second picks the length, from short (0) to long (9).',
+  steps: 'Each digit moves the melody from the previous note: 0 repeats, 1 to 4 go up that many scale steps, 5 to 8 go down 1 to 4, and 9 is a rest.'
+};
+
+function buildVoiceRows() {
+  const nv = +$('nv').value, box = $('voiceRows');
+  box.innerHTML = '';
+  for (let k = 0; k < nv; k++) {
+    const a = document.createElement('div'); a.className = 'field';
+    a.innerHTML = '<label for="inst' + k + '">Instrument ' + (k + 1) + '</label><select id="inst' + k + '">' +
+      INSTRUMENTS.map((i) => '<option value="' + i[0] + '">' + i[1] + '</option>').join('') + '</select>';
+    const b = document.createElement('div'); b.className = 'field';
+    b.innerHTML = '<label for="oct' + k + '">Lowest octave ' + (k + 1) + '</label><select id="oct' + k + '">' +
+      [1,2,3,4,5].map((o) => '<option>' + o + '</option>').join('') + '</select>';
+    box.appendChild(a); box.appendChild(b);
+    $('inst' + k).value = vstate[k].inst; $('oct' + k).value = vstate[k].oct;
+    $('inst' + k).addEventListener('change', () => { vstate[k].inst = $('inst' + k).value; refresh(); });
+    $('oct' + k).addEventListener('change', () => { vstate[k].oct = +$('oct' + k).value; refresh(); });
+  }
+}
+
+function readStart() {
+  const v = parseStart($('start').value), err = $('startErr');
+  if (v === null) { err.hidden = false; err.textContent = 'Enter a whole number, like 5000, 250,000 or 4M.'; return lastStart; }
+  if (v > START_MAX) { err.hidden = false; err.textContent = 'The largest start digit is 20,000,000.'; return (lastStart = START_MAX); }
+  err.hidden = true;
+  return (lastStart = v);
+}
+function ensureDigits(n) {
+  if (PI.length >= n) return true;
+  if (n <= 20000) { PI = computePi(Math.max(n, 3000)); return true; }
+  return false;
+}
+const fmtN = (n) => n.toLocaleString('en-US');
+
+let lastDur = 60;
+function readDuration() {
+  const v = parseDuration($('duration').value), err = $('durErr');
+  if (v === null) { err.hidden = false; err.textContent = 'Enter a time like 1:30 or 90 (seconds).'; return lastDur; }
+  if (v < DURATION_MIN || v > DURATION_MAX) { err.hidden = false; err.textContent = 'Use a time from 0:05 to 99:59.'; return (lastDur = Math.max(DURATION_MIN, Math.min(DURATION_MAX, v))); }
+  err.hidden = true;
+  return (lastDur = v);
+}
+function settings() {
+  return {
+    scheme: $('scheme').value, codeLen: +$('codeLen').value, fixedLen: +$('fixedLen').value,
+    range: +$('range').value, root: +$('key').value, scale: $('scale').value,
+    count: Math.max(4, Math.min(128, +$('count').value || 24)),
+    start: readStart(),
+    mode: $('lenMode').value, durSec: readDuration(), bpm: +$('tempo').value
+  };
+}
+
+let voices = [], playing = false, ctx = null, master = null, nodes = [], raf = 0, timer = 0, t0 = 0, spb = 0.5, total = 0;
+let lastOn = [], chipEls = [], sheetEls = [], sched = [];
+let pitchMin = 60, pitchMax = 72, totalBeats = 1;
+const instLabel = (k) => (INSTRUMENTS.find((i) => i[0] === vstate[k].inst) || [0, ''])[1];
+
+// Streaming state for Time/Infinite: { st (from newStream), ov, limit, genEnd, done, out }.
+let stream = null, streamUsed = false, curSettings = null;
+const PREVIEW_BARS = 8, INFINITE_AHEAD_SEC = 600;
+// While streaming: bars generated ahead (covers a full score page), events kept behind the
+// playhead, score page size, and piano-roll window width (all in beats / bars).
+const AHEAD_BEATS = 48, TRIM_BEHIND_BEATS = 64, PAGE_BARS = 8, ROLL_SPAN = 32;
+/* A voice is { events, total, off, dropped }. Event indices are "logical": event i lives at
+   events[i - off], so dropping played events (off grows) never renumbers the rest.
+   dropped = last digit index among dropped events (for the played range). */
+const newVoice = (events = [], total = 0) => ({ events, total, off: 0, dropped: -1 });
+const evAt = (k, i) => { const vo = voices[k]; return vo && vo.events[i - vo.off]; };
+let chipBoxes = [], renderedPage = -1, sheetBeat = 0;
+
+function refresh() {
+  if (playing) stop();
+  const s = settings(), nv = +$('nv').value;
+  curSettings = s;
+  showSchemeRows(s);
+  showLengthRows(s.mode);
+  const ov = readOverrides(s);
+  voices = []; stream = null; streamUsed = false; sheetBeat = 0; renderedPage = -1; refillFailed = false;
+  playedBeats = 0;
+  updateDownload();
+  const need = digitsFor(s, nv);
+  if (!ensureDigits(need)) { showPending(need); return; }
+  pendingNeed = 0;
+  const octs = vstate.slice(0, nv).map((v) => v.oct);
+  if (s.mode === 'notes') buildNotesPiece(s, ov, octs); else buildStreamPreview(s, ov, octs);
+  const ms = voices.flatMap((v) => v.events.filter((e) => !e.rest).map((e) => e.midi));
+  pitchMin = ms.length ? Math.min(...ms) : 60;
+  pitchMax = ms.length ? Math.max(...ms) : 72;
+  renderChips(nv);
+  lastOn = voices.map(() => -1);
+  updateDownload();
+  updateStatus();
+  renderSheet();
+  draw(null, -1);
+}
+/* ---------- MusicXML download ---------- */
+// Notes and Time export the whole piece; Infinite exports what has played, so it waits for playback.
+const DL_TITLE = 'Save the score as MusicXML (opens in MuseScore and other notation programs)';
+function updateDownload() {
+  const s = curSettings, infinite = s && s.mode === 'infinite';
+  $('dlXml').disabled = !voices.length || (infinite && !playing && playedBeats <= 0);
+  $('dlXml').title = infinite ? 'Save the bars played so far as MusicXML (press Play first)' : DL_TITLE;
+}
+// Beats played so far in the current Infinite run (live while playing).
+const beatsPlayed = () => (playing ? Math.max(0, (ctx.currentTime - t0) / spb) : playedBeats);
+// Full per-voice event lists to export: voices as built (Notes), or regenerated (Time/Infinite),
+// because streaming drops bars behind the playhead.
+function exportEvents() {
+  if (!stream) return voices.map((vo) => vo.events);
+  const limit = curSettings.mode === 'time' ? stream.limit : exportBeats(beatsPlayed());
+  return regenerateVoices(curSettings, PI, stream.ov, stream.octs, limit);
+}
+// First and last digit of pi that the events read.
+function digitSpan(evs) {
+  const ends = evs.flatMap((list) => list.map((e) => e.at + e.digits.length - 1));
+  return { start: curSettings.start, end: Math.max(curSettings.start, ...ends) };
+}
+// Event lists -> score object for toMusicXML.
+function collectScore(evs) {
+  const { start, end } = digitSpan(evs);
+  const bars = padBars(evs.map((list) => toMeasures(list)));
+  return {
+    title: 'Pi Notes', subtitle: 'Pi Notes: digits ' + fmtN(start) + '–' + fmtN(end), bpm: +$('tempo').value, start, end,
+    parts: evs.map((list, k) => ({ name: instLabel(k), program: GM_PROGRAM[vstate[k].inst] || 1,
+      clef: chooseClef(list, $('clef').value), bars: bars[k] }))
+  };
+}
+// Save text as a file through a temporary link.
+function downloadText(name, text, mime) {
+  const url = URL.createObjectURL(new Blob([text], { type: mime }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function downloadMusicXML() {
+  if (!voices.length || !curSettings) return;
+  const evs = exportEvents();
+  if (!evs) { $('status').textContent = 'Could not rebuild the score: the digits it needs are not computed.'; return; }
+  const score = collectScore(evs);
+  downloadText('pi-notes-' + score.start + '-' + score.end + '.musicxml', toMusicXML(score), 'application/vnd.recordare.musicxml+xml');
+}
+function showSchemeRows(s) {
+  $('schemeNote').textContent = NOTES[s.scheme];
+  $('rowCodeLen').hidden = s.scheme !== 'codes';
+  $('rowOver').hidden = s.scheme !== 'codes';
+  $('rowLen').hidden = !(s.scheme === 'degrees' || s.scheme === 'steps');
+  $('rowRange').hidden = !(s.scheme === 'codes' || s.scheme === 'steps');
+}
+function showLengthRows(mode) {
+  $('rowCount').hidden = mode !== 'notes';
+  $('rowDuration').hidden = mode !== 'time';
+}
+function readOverrides(s) {
+  const ov = parseOverrides($('over').value, s.codeLen);
+  $('overErr').hidden = !ov.errors.length;
+  $('overErr').textContent = ov.errors.join(' | ');
+  return ov.map;
+}
+// Total beats a Time piece lasts; Infinity for Infinite; null for Notes (set by the count).
+function limitBeats(s) {
+  return s.mode === 'time' ? beatsForSeconds(s.durSec, s.bpm) : s.mode === 'infinite' ? Infinity : null;
+}
+// Highest digit index needed before playback can start.
+function digitsFor(s, nv) {
+  if (s.mode === 'notes') return digitsNeeded(s, nv);
+  const beats = s.mode === 'time' ? limitBeats(s) : beatsForSeconds(INFINITE_AHEAD_SEC, s.bpm);
+  return s.start + streamDigits(s, nv, beats);
+}
+function showPending(need) {
+  const est = Math.max(1, Math.round(2 * Math.pow(need / 1e6, 1.1)));
+  chipEls = []; sheetEls = []; chipBoxes = []; lastOn = [];
+  $('chipsWrap').innerHTML = '';
+  $('sheet').innerHTML = '<p class="msg">The score appears once the digits are computed.</p>';
+  sheetDirty = false;
+  $('rangeNote').textContent = 'Digits up to ' + fmtN(need) + ' are not computed yet.';
+  $('status').textContent = 'Press Play to compute them (about ' + est + ' sec on a laptop, longer on a phone).';
+  pendingNeed = need;
+  totalBeats = 1;
+  draw(null, -1);
+}
+// Notes mode: the whole piece up front.
+function buildNotesPiece(s, ov, octs) {
+  const built = buildCountVoices(s, PI, ov, octs), nv = octs.length;
+  voices = built.voices.map((v) => newVoice(v.events, v.total));
+  totalBeats = Math.max(1, ...voices.map((v) => v.total));
+  const nEv = voices.reduce((a, v) => a + v.events.length, 0);
+  $('rangeNote').textContent = 'Using digits ' + fmtN(s.start) + ' to ' + fmtN(built.nextPos - 1) + ' of pi, ' + nEv + ' events' + (nv > 1 ? ' across ' + nv + ' instruments.' : '.') +
+    (nv > 1 ? ' Each instrument reads the digits that follow the previous one.' : '');
+}
+// Time/Infinite: start a stream and generate the first bars as a preview; playback continues it.
+function buildStreamPreview(s, ov, octs) {
+  stream = { st: newStream(s, octs), ov, octs, limit: limitBeats(s), genEnd: 0, done: false, out: false };
+  voices = octs.map(() => newVoice());
+  fillStream(PREVIEW_BARS * 4);
+  totalBeats = Math.max(1, stream.genEnd);
+  const nv = octs.length;
+  $('rangeNote').textContent = 'Starting at digit ' + fmtN(s.start) + '. ' +
+    (stream.done ? 'The whole piece is shown.' : 'The first ' + PREVIEW_BARS + ' bars are shown; playback keeps reading digits ' + (s.mode === 'time' ? 'until the time is up.' : 'until you press Stop.')) +
+    (nv > 1 ? ' In each bar, each instrument reads the digits that follow the previous one.' : '');
+}
+// Generate bars until `untilBeat` is covered, the piece ends, or the computed digits run out.
+// Returns, per voice, { from: logical index of the first new event, events: the new events }.
+function fillStream(untilBeat) {
+  const added = voices.map((vo) => ({ from: vo.off + vo.events.length, events: [] }));
+  if (!stream) return added;
+  while (!stream.done && !stream.out && stream.genEnd < untilBeat) {
+    const r = buildBar(stream.st, PI, stream.ov, stream.limit);
+    if (!r) { stream.out = true; break; }
+    r.events.forEach((list, k) => {
+      const vo = voices[k];
+      list.forEach((e) => { vo.events.push(e); added[k].events.push(e); });
+      vo.total = stream.st.voices[k].end;
+    });
+    stream.genEnd = r.barEnd;
+    if (r.done) stream.done = true;
+  }
+  return added;
+}
+// Drop events that ended more than TRIM_BEHIND_BEATS ago (never the current or unscheduled ones),
+// with their chips. Keeps memory flat during long Infinite runs.
+function trimPlayed(beat) {
+  voices.forEach((vo, k) => {
+    let n = 0;
+    while (n < vo.events.length) {
+      const e = vo.events[n], idx = vo.off + n;
+      if (e.startBeat + e.beats >= beat - TRIM_BEHIND_BEATS || idx >= sched[k] || idx >= lastOn[k]) break;
+      vo.dropped = Math.max(vo.dropped, e.at + e.digits.length - 1);
+      const c = chipEls[k] && chipEls[k].get(idx);
+      if (c) { c.remove(); chipEls[k].delete(idx); }
+      n++;
+    }
+    if (n) { vo.events.splice(0, n); vo.off += n; }
+  });
+}
+function renderChips(nv) {
+  const wrap = $('chipsWrap');
+  wrap.innerHTML = '';
+  chipBoxes = [];
+  chipEls = voices.map((vo, k) => {
+    if (nv > 1) {
+      const l = document.createElement('div'); l.className = 'vlabel';
+      l.innerHTML = '<i style="background:var(--v' + (k + 1) + ')"></i>Instrument ' + (k + 1) + ': ' + instLabel(k);
+      wrap.appendChild(l);
+    }
+    const box = document.createElement('div'); box.className = 'chips'; wrap.appendChild(box);
+    chipBoxes[k] = box;
+    const m = new Map();
+    vo.events.forEach((e, i) => m.set(vo.off + i, makeChip(e, box)));
+    return m;
+  });
+}
+function makeChip(e, box) {
+  const c = document.createElement('div');
+  c.className = 'chip' + (e.rest ? ' rest' : '') + (e.pinned ? ' pinned' : '');
+  c.innerHTML = '<span class="dg">' + e.digits + '</span><span class="nt">' + e.label + '</span><span class="du">' + fmtLen(e.beats) + '</span>';
+  box.appendChild(c);
+  return c;
+}
+// Add chips for events generated during playback (`added` from fillStream).
+function appendChips(added) {
+  added.forEach(({ from, events }, k) => {
+    if (!chipBoxes[k] || !chipEls[k]) return;
+    events.forEach((e, j) => chipEls[k].set(from + j, makeChip(e, chipBoxes[k])));
+  });
+}
+// Status line while stopped: how long the piece is.
+function updateStatus() {
+  const bpm = +$('tempo').value, mode = $('lenMode').value;
+  $('status').textContent = mode === 'infinite' ? 'Plays until you press Stop · ' + bpm + ' BPM'
+    : mode === 'time' ? fmtTime(lastDur) + ' at ' + bpm + ' BPM'
+    : Math.round(totalBeats * 60 / bpm) + ' sec at ' + bpm + ' BPM';
+}
+
+function draw(cur, beatPos) {
+  const cv = $('roll'), dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth, H = cv.clientHeight;
+  if (!W) return;
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const g = cv.getContext('2d');
+  if (!g) return;
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, W, H);
+  const cs = getComputedStyle(document.documentElement);
+  const col = (n) => cs.getPropertyValue(n).trim();
+  const hot = col('--hot'), line = col('--line'), muted = col('--muted');
+  const { from, to } = rollWindow(beatPos);
+  const visible = (e) => e.startBeat + e.beats > from && e.startBeat < to;
+  const [pMin, pMax] = stream ? pitchRange(visible) : [pitchMin, pitchMax];
+  const pad = 10, span = Math.max(pMax - pMin, 6);
+  const nh = Math.max(3, Math.min(10, (H - 2 * pad) / (span + 1)));
+  const xOf = (b) => (b - from) / (to - from) * W;
+  g.strokeStyle = line; g.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) { const y = pad + i * (H - 2 * pad - nh) / 4 + nh / 2; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  voices.forEach((vo, k) => {
+    const color = col('--v' + (k + 1));
+    vo.events.forEach((e, j) => {
+      if (!visible(e)) return;
+      const x = xOf(e.startBeat), w = Math.max(2, e.beats / (to - from) * W - 1.5);
+      if (e.rest) { g.fillStyle = muted; g.globalAlpha = 0.45; g.fillRect(x, H - pad - 3 - k * 4, w, 3); g.globalAlpha = 1; return; }
+      const y = pad + (1 - (e.midi - pMin) / span) * (H - 2 * pad - nh);
+      g.fillStyle = cur && cur[k] === vo.off + j ? hot : color;
+      g.fillRect(x, y, w, nh);
+    });
+  });
+  if (beatPos >= 0) { const x = xOf(beatPos); g.fillStyle = hot; g.fillRect(x - 1, 0, 2, H); }
+}
+// Beats shown by the piano roll: the whole piece in Notes mode; while streaming, a ROLL_SPAN
+// window with the playhead a third of the way in (the preview when stopped).
+function rollWindow(beatPos) {
+  if (!stream) return { from: 0, to: totalBeats };
+  const at = beatPos >= 0 ? beatPos : sheetBeat;  // stopped: stay where playback stopped
+  const from = Math.max(0, at - ROLL_SPAN / 3);
+  return { from, to: from + ROLL_SPAN };
+}
+// Lowest and highest pitch among the events that pass `keep`.
+function pitchRange(keep) {
+  let lo = Infinity, hi = -Infinity;
+  voices.forEach((vo) => vo.events.forEach((e) => { if (!e.rest && keep(e)) { lo = Math.min(lo, e.midi); hi = Math.max(hi, e.midi); } }));
+  return lo <= hi ? [lo, hi] : [60, 72];
+}
+
+/* ---------- sheet music ---------- */
+const DUR = { 4:'w', 3:'hd', 2:'h', 1.5:'qd', 1:'q', 0.75:'8d', 0.5:'8', 0.25:'16' };
+function renderSheet() {
+  const box = $('sheet');
+  box.innerHTML = '';
+  sheetEls = voices.map(() => new Map());
+  if (!voices.length) return;
+  // VexFlow needs a real width: draw only when the Sheet music tab is open.
+  if ($('sheetBody').hidden) { sheetDirty = true; return; }
+  sheetDirty = false;
+  const V = window.Vex && window.Vex.Flow;
+  if (!V) { box.innerHTML = '<p class="msg">The notation library did not load. Check your connection, then reload the page.</p>'; return; }
+  try {
+    const nv = voices.length;
+    const clefs = voices.map((vo) => chooseClef(vo.events, $('clef').value));
+    // Notes mode: the whole piece. Time/Infinite: the 8-bar page holding the playhead.
+    let bars;
+    if (stream) {
+      renderedPage = Math.floor(sheetBeat / (4 * PAGE_BARS));
+      const from = renderedPage * PAGE_BARS * 4;
+      bars = voices.map((vo) => measuresInRange(vo.events, from, from + PAGE_BARS * 4, vo.off));
+    } else bars = voices.map((vo) => toMeasures(vo.events));
+    const nBars = Math.max(...bars.map((b) => b.length));
+    if (!nBars) { box.innerHTML = '<p class="msg">No notes to show.</p>'; return; }
+    bars.forEach((b) => { while (b.length < nBars) b.push([{ ei: -1, rest: true, midi: null, beats: 4, tie: false }]); });
+    const need = [];
+    for (let b = 0; b < nBars; b++) need.push(Math.max(72, 26 + 22 * Math.max(...bars.map((vb) => vb[b].length))));
+    const avail = Math.max(240, (box.clientWidth || 340) - 8);
+    const systems = [];
+    let cur = [], w = 0;
+    for (let b = 0; b < nBars; b++) {
+      let extra = cur.length ? 0 : 42 + (systems.length ? 0 : 26);
+      if (cur.length && w + need[b] + extra > avail) { systems.push(cur); cur = []; w = 0; extra = 42; }
+      cur.push(b); w += need[b] + extra;
+    }
+    if (cur.length) systems.push(cur);
+    const rowH = 104, sysH = nv * rowH + 14;
+    const H = systems.length * sysH + 16;
+    const cs = getComputedStyle(document.documentElement);
+    const ink = cs.getPropertyValue('--ink').trim() || '#000';
+    const renderer = new V.Renderer(box, V.Renderer.Backends.SVG);
+    renderer.resize(avail + 8, H);
+    const c = renderer.getContext();
+    c.setFillStyle(ink); c.setStrokeStyle(ink);
+    const drawn = voices.map(() => []);
+    systems.forEach((sys, si) => {
+      const nat = sys.map((b, i) => need[b] + (i === 0 ? 42 + (si === 0 ? 26 : 0) : 0));
+      const sum = nat.reduce((a, b) => a + b, 0);
+      const scale = si === systems.length - 1 ? Math.min(1, avail / sum) : avail / sum;
+      let x = 4;
+      sys.forEach((b, bi) => {
+        const bw = nat[bi] * scale;
+        const staves = [];
+        for (let v = 0; v < nv; v++) {
+          const st = new V.Stave(x, si * sysH + v * rowH + 30, bw);
+          if (bi === 0) { st.addClef(clefs[v]); if (si === 0) st.addTimeSignature('4/4'); }
+          st.setContext(c).draw();
+          staves.push(st);
+          const notes = bars[v][b].map((p) => {
+            const key = p.rest ? (clefs[v] === 'bass' ? 'd/3' : 'b/4') : NAMES[p.midi % 12].toLowerCase() + '/' + (Math.floor(p.midi / 12) - 1);
+            const n = new V.StaveNote({ keys: [key], duration: DUR[p.beats] + (p.rest ? 'r' : ''), clef: clefs[v] });
+            if (p.beats === 3 || p.beats === 1.5 || p.beats === 0.75) V.Dot.buildAndAttach([n], { all: true });
+            drawn[v].push({ note: n, ei: p.ei, tie: p.tie, si });
+            return n;
+          });
+          const voice = new V.Voice({ num_beats: 4, beat_value: 4 }).setMode(V.Voice.Mode.SOFT).addTickables(notes);
+          V.Accidental.applyAccidentals([voice], 'C');
+          // Beams must exist before the notes draw, or beamed notes also draw their own flags.
+          const beams = V.Beam.generateBeams(notes);
+          new V.Formatter().joinVoices([voice]).format([voice], Math.max(30, st.getNoteEndX() - st.getNoteStartX() - 14));
+          voice.draw(c, st);
+          beams.forEach((bm) => bm.setContext(c).draw());
+        }
+        if (nv > 1) {
+          const T = V.StaveConnector.type;
+          new V.StaveConnector(staves[0], staves[nv - 1]).setType(T.SINGLE_RIGHT).setContext(c).draw();
+          if (bi === 0) {
+            new V.StaveConnector(staves[0], staves[nv - 1]).setType(T.SINGLE_LEFT).setContext(c).draw();
+            new V.StaveConnector(staves[0], staves[nv - 1]).setType(nv === 2 ? T.BRACE : T.BRACKET).setContext(c).draw();
+          }
+        }
+        x += bw;
+      });
+    });
+    drawn.forEach((list, v) => {
+      list.forEach((p) => {
+        if (p.ei < 0) return;
+        const el = p.note.getSVGElement && p.note.getSVGElement();
+        if (el) { if (!sheetEls[v].has(p.ei)) sheetEls[v].set(p.ei, []); sheetEls[v].get(p.ei).push(el); }
+      });
+      for (let i = 0; i < list.length - 1; i++) {
+        const p = list[i], q = list[i + 1];
+        if (!p.tie) continue;
+        const tie = (a, b) => new V.StaveTie({ first_note: a, last_note: b, first_indices: [0], last_indices: [0] }).setContext(c).draw();
+        if (p.si === q.si) tie(p.note, q.note); else { tie(p.note, null); tie(null, q.note); }
+      }
+    });
+  } catch (err) {
+    box.innerHTML = '<p class="msg">Could not draw the score: ' + String(err && err.message || err) + '</p>';
+  }
+}
+
+/* ---------- instruments ---------- */
+let organWave = null;
+function getOrgan() {
+  if (!organWave) organWave = ctx.createPeriodicWave(new Float32Array(6), new Float32Array([0, 1, 0.5, 0.35, 0.25, 0.12]));
+  return organWave;
+}
+// [peak, attack, decay time constant (0 = sustain), release time constant]
+const ENV = {
+  piano: [0.5, 0.004, 0.55, 0.09], organ: [0.26, 0.02, 0, 0.05], harp: [0.5, 0.003, 0.4, 0.18],
+  marimba: [0.6, 0.002, 0.14, 0.05], bells: [0.3, 0.002, 1.0, 0.5], flute: [0.4, 0.06, 0, 0.06],
+  strings: [0.2, 0.12, 0, 0.14], guitar: [0.6, 0.002, 0, 0.15], euphonium: [0.32, 0.06, 0, 0.08], bass: [0.65, 0.01, 0.5, 0.07], lead: [0.16, 0.01, 0, 0.05], sine: [0.4, 0.01, 0, 0.05]
+};
+// Karplus-Strong plucked string, rendered once per pitch and cached.
+const ksCache = {};
+function ksBuffer(midi) {
+  const sr = ctx.sampleRate, key = midi + '@' + sr;
+  if (ksCache[key]) return ksCache[key];
+  const f = 440 * Math.pow(2, (midi - 69) / 12), N = Math.max(2, Math.round(sr / f)), len = Math.floor(sr * 2.5);
+  const buf = ctx.createBuffer(1, len, sr), y = buf.getChannelData(0);
+  let seed = midi * 7919 + 13;
+  for (let i = 0; i < N; i++) { seed = (seed * 1664525 + 1013904223) >>> 0; y[i] = seed / 2147483648 - 1; }
+  for (let i = N; i < len; i++) y[i] = 0.497 * (y[i - N] + y[i - N + 1]);
+  return (ksCache[key] = buf);
+}
+function playNote(inst, midi, t, d, out) {
+  const f = 440 * Math.pow(2, (midi - 69) / 12);
+  const os = [];
+  const osc = (type, fr, det) => {
+    const o = ctx.createOscillator();
+    if (type === 'organ') o.setPeriodicWave(getOrgan()); else o.type = type;
+    o.frequency.value = fr;
+    if (det) o.detune.value = det;
+    os.push(o);
+    return o;
+  };
+  const g = ctx.createGain();
+  g.connect(out);
+  const to = (o, level, dest) => { if (level === 1) o.connect(dest); else { const x = ctx.createGain(); x.gain.value = level; o.connect(x); x.connect(dest); } };
+  const lp = (fc) => { const b = ctx.createBiquadFilter(); b.type = 'lowpass'; b.frequency.value = fc; b.connect(g); return b; };
+  switch (inst) {
+    case 'piano': to(osc('triangle', f), 1, g); to(osc('sine', 2 * f), 0.3, g); to(osc('sine', 3 * f), 0.1, g); break;
+    case 'organ': to(osc('organ', f), 1, g); break;
+    case 'harp': { const b = lp(Math.min(f * 9, 12000)); b.frequency.setTargetAtTime(Math.min(f * 1.6, 8000), t, 0.12); to(osc('sawtooth', f), 1, b); break; }
+    case 'marimba': to(osc('sine', f), 1, g); to(osc('sine', 4 * f), 0.12, g); break;
+    case 'bells': to(osc('sine', f), 1, g); to(osc('sine', 2.76 * f), 0.35, g); to(osc('sine', 5.4 * f), 0.15, g); break;
+    case 'flute': {
+      const o = osc('sine', f); to(o, 1, g); to(osc('sine', 2 * f), 0.08, g);
+      const lfo = osc('sine', 5.3), lg = ctx.createGain(); lg.gain.value = f * 0.006; lfo.connect(lg); lg.connect(o.frequency);
+      break;
+    }
+    case 'strings': { const b = lp(2000); to(osc('sawtooth', f, -7), 1, b); to(osc('sawtooth', f, 7), 1, b); break; }
+    case 'bass': { const b = lp(1200); to(osc('triangle', f), 1, b); to(osc('sine', 2 * f), 0.25, b); break; }
+    case 'guitar': { const sr = ctx.createBufferSource(); sr.buffer = ksBuffer(midi); os.push(sr); to(sr, 1, g); break; }
+    case 'euphonium': {
+      const b = lp(f * 2); b.frequency.setTargetAtTime(Math.min(f * 6, 5000), t, 0.09);
+      const o = osc('sawtooth', f); to(o, 1, b); to(osc('triangle', f), 0.6, g);
+      const lfo = osc('sine', 5), lg = ctx.createGain(); lg.gain.value = f * 0.004; lfo.connect(lg); lg.connect(o.frequency);
+      break;
+    }
+    case 'lead': to(osc('square', f), 1, lp(2600)); break;
+    default: to(osc('sine', f), 1, g);
+  }
+  const [peak, a, tau, rel] = ENV[inst] || ENV.sine;
+  const hold = Math.max(d, a + 0.01);
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(peak, t + a);
+  if (tau) g.gain.setTargetAtTime(0, t + a, tau);
+  g.gain.setTargetAtTime(0, t + hold, rel);
+  os.forEach((o) => {
+    o.start(t); o.stop(t + hold + rel * 6 + 0.03);
+    nodes.push(o);
+    o.onended = () => { const i = nodes.indexOf(o); if (i >= 0) nodes.splice(i, 1); };
+  });
+}
+
+/* ---------- computing digits on demand ---------- */
+function showProgress(p, label, t) {
+  $('prog').hidden = false;
+  $('fill').style.width = Math.round(p * 100) + '%';
+  $('bar').setAttribute('aria-valuenow', Math.round(p * 100));
+  $('progText').textContent = label + ' ' + Math.round(p * 100) + '% · ' + Math.round((Date.now() - t) / 1000) + ' s';
+}
+function endCompute() {
+  computing = false;
+  clearInterval(computeTimer);
+  if (worker) { worker.cancel(); worker = null; }
+  $('prog').hidden = true;
+  $('play').disabled = false;
+}
+let computeTimer = 0;
+/* GMP (WebAssembly) for the big-number arithmetic: no size cap in any browser, and as fast as or
+   faster than BigInt. Loaded inside the worker; if it can't load, the worker uses BigInt. */
+const GMP_URL = 'https://cdn.jsdelivr.net/npm/gmp-wasm@1.3.2/dist/index.umd.min.js';
+// Body of the pi worker (stringified into it; uses chudnovsky, chudnovskyGmp and self.GMP_URL).
+// Replies { p, l } progress, then { done, engine } or { error, engine }.
+function piWorkerMain() {
+  self.onmessage = function (e) {
+    var digits = e.data.digits;
+    var post = function (m) { self.postMessage(m); };
+    var withBigInt = function () {
+      try { post({ done: chudnovsky(digits, function (p, l) { post({ p: p, l: l }); }), engine: 'bigint' }); }
+      catch (err) { post({ error: String(err && err.message || err), engine: 'bigint' }); }
+    };
+    try { importScripts(self.GMP_URL); } catch (err) {}
+    if (!self.gmp || !self.gmp.init) { withBigInt(); return; }
+    post({ p: 0, l: 'Loading GMP' });
+    self.gmp.init().then(function (g) {
+      try { post({ done: chudnovskyGmp(g.binding, digits, function (p, l) { post({ p: p, l: l + ' · GMP' }); }), engine: 'gmp' }); }
+      catch (err) { post({ error: String(err && err.message || err), engine: 'gmp' }); }
+    }, withBigInt);
+  };
+}
+/* Compute `digits` digits of pi in a Web Worker. onProgress(p, label) / onDone(str) / onFail(msg).
+   If workers are unavailable and allowInline is set, computes on the page instead (it may pause).
+   Returns { cancel() }; after cancel no callback fires. */
+function startPiWorker(digits, onProgress, onDone, onFail, allowInline) {
+  let w = null, alive = true, gotProgress = false;
+  const finish = (fn, v) => { if (!alive) return; alive = false; if (w) w.terminate(); fn(v); };
+  const inline = () => {
+    if (!allowInline) { finish(onFail, 'background tasks are not available'); return; }
+    onProgress(0, 'Computing (this page may pause)');
+    setTimeout(() => { if (!alive) return; try { finish(onDone, chudnovsky(digits, () => {})); } catch (e) { finish(onFail, explainPiError(String(e && e.message || e), 'bigint')); } }, 60);
+  };
+  try {
+    const src = chudnovsky.toString() + ';' + chudnovskyGmp.toString() + ';self.GMP_URL=' + JSON.stringify(GMP_URL) + ';(' + piWorkerMain.toString() + ')();';
+    const url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+    w = new Worker(url);
+    w.onmessage = (e) => {
+      const d = e.data;
+      if (d.done) finish(onDone, d.done);
+      else if (d.error) finish(onFail, explainPiError(d.error, d.engine));
+      else { gotProgress = true; onProgress(d.p, d.l); }
+    };
+    w.onerror = () => { if (!alive) return; if (!gotProgress) { w.terminate(); w = null; inline(); } else finish(onFail, 'the background task stopped'); };
+    w.postMessage({ digits });
+  } catch (e) { inline(); }
+  return { cancel() { alive = false; if (w) w.terminate(); } };
+}
+// Turn the engine's error into something actionable (the raw BigInt cap message is cryptic).
+function explainPiError(msg, engine) {
+  if (engine === 'bigint' && /too large|maximum bigint|out of memory/i.test(msg)) {
+    return "couldn't load the GMP library, and this browser can only compute about 150,000 digits without it. Check your connection and try again, or use Chrome or Edge.";
+  }
+  return msg;
+}
+// Foreground compute before playback: progress bar, Play disabled, then start playing.
+function computeDigits(need) {
+  stopRefill();
+  computing = true;
+  $('play').disabled = true;
+  const t = Date.now();
+  let p = 0, label = 'Starting';
+  showProgress(0, label, t);
+  computeTimer = setInterval(() => showProgress(p, label, t), 500);
+  const done = (str) => {
+    endCompute();
+    PI = str.slice(0, need);
+    refresh();
+    if (!pendingNeed) startPlayback();
+  };
+  const fail = (msg) => { endCompute(); $('status').textContent = 'Could not compute the digits: ' + msg; };
+  worker = startPiWorker(need + 20, (pp, l) => { p = pp; label = l; showProgress(p, label, t); }, done, fail, true);
+}
+/* ---------- background digit refill (Time/Infinite) ----------
+   Pi can't be computed from an offset, so a refill recomputes from digit 0 in a worker while the
+   music plays on. Started when the computed digits cover less than REFILL.atSec of playback;
+   computes REFILL.aheadSec ahead; never beyond REFILL.ceiling digits. */
+const REFILL = { atSec: 300, aheadSec: 1200, ceiling: 20000000 };
+let refill = null, refillFailed = false, waiting = false;
+function stopRefill() { if (refill) { refill.cancel(); refill = null; } }
+// Seconds of playback the computed digits still cover past the generator's read position.
+function bufferSeconds() {
+  const s = curSettings, rate = voices.length * digitsPerBeat(s) * s.bpm / 60;
+  return (PI.length - stream.st.pos) / rate;
+}
+function maybeRefill() {
+  if (refill || refillFailed || computing || !stream || stream.done) return;
+  if (PI.length >= REFILL.ceiling || bufferSeconds() > REFILL.atSec) return;
+  const s = curSettings;
+  const target = Math.min(REFILL.ceiling, stream.st.pos + streamDigits(s, voices.length, beatsForSeconds(REFILL.aheadSec, s.bpm)));
+  if (target <= PI.length) return;
+  refill = startPiWorker(target + 20, () => {}, (str) => {
+    refill = null;
+    if (str.length > PI.length) PI = str.slice(0, target);
+    if (stream) stream.out = false;
+    resumeAfterWait();
+  }, () => { refill = null; refillFailed = true; }, false);
+}
+// The generator caught up with the computed digits while a refill runs: freeze the audio clock.
+function waitForDigits(el) {
+  waiting = true;
+  try { ctx.suspend(); } catch (e) {}
+  showPlayStatus(el);
+}
+function resumeAfterWait() {
+  if (!waiting || !playing) return;
+  waiting = false;
+  pump();  // generate and schedule the new bars before the clock moves again
+  try { ctx.resume(); } catch (e) {}
+}
+// No more digits and no refill coming: end where the generated music ends.
+function endAtGenerated() {
+  const end = Math.max(...voices.map((v) => v.total)) * spb;
+  if (end < total) { total = end; endReason = PI.length >= REFILL.ceiling ? 'ceiling' : 'digits'; }
+}
+$('cancel').addEventListener('click', () => { endCompute(); $('status').textContent = 'Cancelled. Press Play to try again, or pick a smaller start digit.'; });
+
+/* ---------- playback ---------- */
+// Called every 150 ms: generate bars ahead (Time/Infinite), then schedule notes 1.5 s ahead.
+function pump() {
+  if (!playing) return;
+  if (stream) {
+    const beat = (ctx.currentTime - t0) / spb;
+    appendChips(fillStream(beat + AHEAD_BEATS));
+    trimPlayed(beat);
+    maybeRefill();
+    if (stream.out && !refill) endAtGenerated();
+  }
+  voices.forEach((vo, k) => {
+    while (sched[k] < vo.off + vo.events.length) {
+      const e = vo.events[sched[k] - vo.off], st = t0 + e.startBeat * spb;
+      if (st > ctx.currentTime + 1.5) break;
+      if (!e.rest) playNote(vstate[k].inst, e.midi, Math.max(st, ctx.currentTime), e.beats * spb, voiceOut[k]);
+      sched[k]++;
+    }
+  });
+}
+let voiceOut = [];
+function applyRandomStart() {
+  $('start').value = fmtN(randomStart(+$('randomMax').value));
+  refresh();
+}
+// Play button: toggle; optionally re-randomize the start; compute digits first if needed.
+function play() {
+  if (playing) { stop(); return; }
+  if (computing) return;
+  if ($('randomEach').checked) applyRandomStart();
+  if (pendingNeed) {
+    try { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); ctx.resume(); } catch (e) {}
+    computeDigits(pendingNeed);
+    return;
+  }
+  startPlayback();
+}
+// Start audio for the voices already built by refresh().
+function startPlayback() {
+  // A stream is consumed by playing it; rebuild the preview so every Play starts at the start digit.
+  if (streamUsed) { refresh(); if (pendingNeed) return; }
+  if (!voices.some((v) => v.events.length)) return;
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    ctx.resume();
+  } catch (e) { $('status').textContent = 'Audio is not available in this browser.'; return; }
+  const comp = ctx.createDynamicsCompressor();
+  master = ctx.createGain(); master.gain.value = 0.9 / Math.sqrt(voices.length);
+  master.connect(comp); comp.connect(ctx.destination);
+  voiceOut = voices.map(() => { const g = ctx.createGain(); g.connect(master); return g; });
+  spb = 60 / +$('tempo').value;
+  t0 = ctx.currentTime + 0.12;
+  total = (stream ? stream.limit : totalBeats) * spb;
+  endReason = '';
+  lastSec = -1;
+  streamUsed = !!stream;
+  sched = voices.map(() => 0);
+  nodes = [];
+  playing = true;
+  updateDownload();
+  lastOn = voices.map(() => -1);
+  pump();
+  timer = setInterval(pump, 150);
+  $('play').textContent = 'Stop';
+  raf = requestAnimationFrame(tick);
+}
+
+function setOn(k, idx, on) {
+  if (idx < 0) return;
+  const c = chipEls[k] && chipEls[k].get(idx);
+  if (c) c.classList.toggle('on', on);
+  ((sheetEls[k] && sheetEls[k].get(idx)) || []).forEach((el) => el.classList.toggle('on', on));
+}
+let endReason = '', lastSec = -1, lastPlayed = null, playedBeats = 0;
+function tick() {
+  if (!playing) return;
+  const el = ctx.currentTime - t0;
+  if (el >= total + 0.2) { stop(); return; }
+  const beat = Math.max(0, el / spb);
+  voices.forEach((vo, k) => {
+    let idx = -1;
+    // Time only moves forward, so search from the current event (event lists grow while streaming).
+    for (let i = Math.max(vo.off, lastOn[k]); i < vo.off + vo.events.length; i++) { const e = vo.events[i - vo.off]; if (beat >= e.startBeat && beat < e.startBeat + e.beats) { idx = i; break; } }
+    if (idx !== lastOn[k]) {
+      setOn(k, lastOn[k], false);
+      setOn(k, idx, true);
+      const c = idx >= 0 && chipEls[k] && chipEls[k].get(idx);
+      if (c) {
+        const box = c.parentNode;
+        box.scrollTop = c.offsetTop - box.offsetTop - box.clientHeight / 2 + c.offsetHeight / 2;
+      }
+      if (k === 0) scrollSheetTo(idx);
+      lastOn[k] = idx;
+    }
+  });
+  sheetBeat = beat;
+  if (stream) {
+    turnSheetPage(beat);
+    if (stream.out && refill && !waiting && beat >= stream.genEnd - 0.1) waitForDigits(el);
+  }
+  if (Math.floor(el) !== lastSec) { lastSec = Math.floor(el); showPlayStatus(el); }
+  draw(lastOn, beat);
+  raf = requestAnimationFrame(tick);
+}
+// Streaming: redraw the score when the playhead enters the next 8-bar page.
+function turnSheetPage(beat) {
+  if (Math.floor(beat / (4 * PAGE_BARS)) === renderedPage) return;
+  if ($('sheetBody').hidden) { sheetDirty = true; return; }
+  renderSheet();
+  voices.forEach((vo, k) => setOn(k, lastOn[k], true));
+  scrollSheetTo(lastOn[0]);
+}
+// Keep the playing note of instrument 1 in view inside the score's scroll box.
+function scrollSheetTo(idx) {
+  const els = sheetEls[0] && sheetEls[0].get(idx);
+  if (!els || !els.length) return;
+  const box = $('sheet'), r = els[0].getBoundingClientRect(), br = box.getBoundingClientRect();
+  if (r.top < br.top || r.bottom > br.bottom) box.scrollTop += r.top - br.top - box.clientHeight / 3;
+}
+// Status line while playing: "0:12 / 1:00 · digit 1,234" (or "0:12 · ∞").
+function showPlayStatus(el) {
+  const e = evAt(0, lastOn[0]);
+  $('status').textContent = fmtTime(el) + (total === Infinity ? ' · ∞' : ' / ' + fmtTime(total)) + (e ? ' · digit ' + fmtN(e.at) : '') +
+    (waiting ? ' · waiting for more digits…' : refill ? ' · computing more digits' : '');
+}
+/* The digits a playback actually used: from the start digit to the last digit of the last
+   event that began. This is the record a future version can store to offer unplayed ranges. */
+function playedRange(beat) {
+  let end = -1;
+  voices.forEach((vo) => {
+    end = Math.max(end, vo.dropped);
+    vo.events.forEach((e) => { if (e.startBeat <= beat) end = Math.max(end, e.at + e.digits.length - 1); });
+  });
+  if (end < 0 || !curSettings) return null;
+  const s = curSettings;
+  return { start: s.start, end, seconds: beat * spb, mode: s.mode, scheme: s.scheme, codeLen: s.codeLen, fixedLen: s.fixedLen,
+    range: s.range, root: s.root, scale: s.scale, bpm: s.bpm, voices: voices.map((v, k) => ({ inst: vstate[k].inst, oct: vstate[k].oct })) };
+}
+
+function stop() {
+  if (playing) { playedBeats = beatsPlayed(); lastPlayed = playedRange(playedBeats); }
+  playing = false;
+  updateDownload();
+  waiting = false;
+  cancelAnimationFrame(raf);
+  clearInterval(timer);
+  nodes.forEach((o) => { try { o.stop(); } catch (e) {} });
+  nodes = [];
+  if (master) { try { master.disconnect(); } catch (e) {} }
+  voices.forEach((vo, k) => setOn(k, lastOn[k], false));
+  lastOn = voices.map(() => -1);
+  $('play').textContent = 'Play';
+  if (lastPlayed) {
+    $('status').textContent = (endReason === 'digits' ? 'Stopped: no more computed digits. ' : endReason === 'ceiling' ? 'Stopped at the ' + fmtN(REFILL.ceiling) + '-digit limit. ' : '') +
+      'Played digits ' + fmtN(lastPlayed.start) + '–' + fmtN(lastPlayed.end) + ' (' + fmtTime(lastPlayed.seconds) + ').';
+  }
+  draw(null, -1);
+}
+
+$('play').addEventListener('click', play);
+/* Pinned codes: one list per code length (2, 3, 4 digits). The textbox shows the list for the
+   current "Digits per code"; switching length saves it and loads the other list. */
+const PIN_EXAMPLES = { 2: '31 = C4 1/2\n41 = rest 1/4', 3: '314 = C4 1/2\n159 = rest 1/4', 4: '3141 = C4 1/2\n1459 = rest 1/4' };
+const pinsByLen = { 2: '', 3: '', 4: $('over').defaultValue };
+// Start from the length the browser shows: Firefox restores form values on reload, so it may not be 4.
+// The restored text belongs to that length, except the 4-digit examples left over from an earlier mismatch.
+let pinLen = +$('codeLen').value;
+pinsByLen[pinLen] = pinLen !== 4 && $('over').value === $('over').defaultValue ? '' : $('over').value;
+// Show the list, placeholder and label for pinLen.
+function showPins() {
+  $('over').value = pinsByLen[pinLen];
+  $('over').placeholder = 'For example:\n' + PIN_EXAMPLES[pinLen];
+  $('overLabel').textContent = 'Pinned ' + pinLen + '-digit codes (one per line: code = note or rest, then length)';
+}
+function switchPins() {
+  pinsByLen[pinLen] = $('over').value;
+  pinLen = +$('codeLen').value;
+  showPins();
+}
+showPins();
+$('codeLen').addEventListener('change', () => { switchPins(); refresh(); });
+['scheme','fixedLen','range','key','scale','count','start','over','clef','lenMode','duration'].forEach((id) => {
+  $(id).addEventListener(['over', 'count', 'start', 'duration'].includes(id) ? 'input' : 'change', refresh);
+});
+$('presets').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  $('start').value = b.dataset.v;
+  refresh();
+});
+$('randomBtn').addEventListener('click', applyRandomStart);
+/* ---------- music tabs (one view at a time) ---------- */
+const TABS = ['digits', 'roll', 'sheet'];
+const TAB_KEY = 'pi-notes.tab';
+let sheetDirty = false;
+// Show one panel, hide the others, and remember the choice for this browser.
+function selectTab(name) {
+  TABS.forEach((t) => {
+    const on = t === name, btn = $('tab-' + t);
+    btn.setAttribute('aria-selected', on);
+    btn.tabIndex = on ? 0 : -1;
+    $(t + 'Body').hidden = !on;
+  });
+  $('sheetTools').hidden = name !== 'sheet';
+  try { localStorage.setItem(TAB_KEY, name); } catch (e) {}
+  onTabShown(name);
+}
+// Bring the newly visible view up to date (they are not drawn while hidden).
+function onTabShown(name) {
+  if (name === 'roll') draw(playing ? lastOn : null, playing ? (ctx.currentTime - t0) / spb : -1);
+  if (name === 'sheet') {
+    const w = $('sheet').clientWidth;
+    if (sheetDirty || w !== lastW) {
+      lastW = w;
+      renderSheet();
+      if (playing) voices.forEach((vo, k) => setOn(k, lastOn[k], true));
+    }
+  }
+}
+$('tabs').addEventListener('click', (e) => { const b = e.target.closest('[role="tab"]'); if (b) selectTab(b.dataset.tab); });
+// Arrow keys move between tabs (ARIA tabs pattern).
+$('tabs').addEventListener('keydown', (e) => {
+  const i = TABS.indexOf(document.activeElement.dataset.tab);
+  if (i < 0) return;
+  const j = e.key === 'ArrowRight' ? (i + 1) % TABS.length : e.key === 'ArrowLeft' ? (i + TABS.length - 1) % TABS.length
+    : e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : -1;
+  if (j < 0) return;
+  e.preventDefault();
+  selectTab(TABS[j]);
+  $('tab-' + TABS[j]).focus();
+});
+$('nv').addEventListener('change', () => { buildVoiceRows(); refresh(); });
+$('dlXml').addEventListener('click', downloadMusicXML);
+$('tempo').addEventListener('input', () => { if (playing) stop(); $('tempoOut').textContent = $('tempo').value; updateStatus(); });
+// Time/Infinite pieces are measured in beats from the tempo, so rebuild once the slider settles.
+$('tempo').addEventListener('change', () => { if ($('lenMode').value !== 'notes') refresh(); });
+let rz = 0, lastW = 0;
+window.addEventListener('resize', () => {
+  clearTimeout(rz);
+  rz = setTimeout(() => {
+    draw(playing ? lastOn : null, playing ? (ctx.currentTime - t0) / spb : -1);
+    const w = $('sheet').clientWidth;
+    if (w !== lastW && !playing) { lastW = w; renderSheet(); }
+  }, 150);
+});
+const recolor = () => { if (!playing) { renderSheet(); draw(null, -1); } };
+try { window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', recolor); } catch (e) {}
+new MutationObserver(recolor).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+buildVoiceRows();
+refresh();
+lastW = $('sheet').clientWidth;
+{
+  let saved = null;
+  try { saved = localStorage.getItem(TAB_KEY); } catch (e) {}
+  if (TABS.includes(saved) && saved !== 'digits') selectTab(saved);
+}
+</script>
+</body>
+</html>

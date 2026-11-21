@@ -1,0 +1,13 @@
+{
+  "name": "chromatone",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Music and colour from number series.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node --test 'tests/**/*.test.js'",
+    "dev": "npx wrangler@4.166.0 dev",
+    "deploy": "npx wrangler@4.166.0 deploy"
+  }
+}

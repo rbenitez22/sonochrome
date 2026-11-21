@@ -1,0 +1,6 @@
+// Cloudflare Worker with static assets: everything under ./public is served as-is, nothing else is deployed.
+{
+  "name": "pi-notes",
+  "compatibility_date": "2026-11-01",
+  "assets": { "directory": "./public" }
+}
