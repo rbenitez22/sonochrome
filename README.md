@@ -112,6 +112,7 @@ The BigInt versions agree with separate simple series, and with exact squaring f
 | Module | Exports |
 |---|---|
 | `theory.js` | `NAMES` (flat spellings), `SCALES` (name → semitones), `midiName(60)` → `'C4'`, `noteToMidi('Bb3')` → `58` (or `null`), `fmtLen(1.5)` → `'3/8'`, `quant(b)` (snap beats to the sixteenth grid) |
+| `keys.js` | `keySignature(root, scale)` → `{ fifths, mode, name }` (Major and the major pentatonic use the root's major key; Natural minor, the minor pentatonic and Blues the root's minor key; Dorian the major key a whole step below; Whole tone and Chromatic none). `spell(midi, fifths)` → `{ step, alter, octave }`, `spelledName(midi, fifths)` → `'G#4'`, `vexKey(midi, fifths)` → `'g#/4'`. The key's notes take its letters, and other notes are naturals where possible, else sharps in a sharp key and flats otherwise. With fifths 0 the spelling equals `midiName`. |
 | `overrides.js` | `parseOverrides(text, codeLen)` → `{ map, errors }`: pinned codes such as `2635 = Bb3 1/4` or `1459 = rest`, for the `codes` scheme |
 | `schemes.js` | `SCHEMES` (`{ id, label, accepts(seq) }`), `chunkSize(s)`, `decodeChunk(s, chunk, overrides, rd)`, `symbolsPerBeat(s)`, and the tables `PAIR_LEN`, `CODE_LEN`, `STEPS` |
 | `reader.js` | `newReader(s, pos)` → `{ pos, cur }`, `readEvent(s, seq, overrides, rd)` → an event or `null` when the seq is too short, `symbolString(values)` |
