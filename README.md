@@ -226,7 +226,7 @@ Changing the hash switches series or view in place, so browser Back and Forward 
 **Layout** (`plans/wide-layout.md`): the page is up to 1440 px wide. A 440 px left column holds every settings card, and the right column holds the active view's card at full height, so a Colour image or the music views are fully in view.
 - **Left column, top to bottom:**
   - **Music:** Series, Playback (Length, Play, status), Scheme, Sound.
-  - **Colour:** Colour (mode, fill order, readout format), Series, Image (size and pixel size with presets, Copy colors, Download PNG, status).
+  - **Colour:** Series, Colour (mode, fill order, readout format), Image (size and pixel size with presets, Copy colors, Download PNG, status).
 - **Series card** (shared by both views):
   - the series name, its description and a "← All series" link;
   - the source's params: a **Base** select for the constants, kept in the route as `?base=12` (left out at the default of 10);

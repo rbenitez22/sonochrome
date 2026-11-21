@@ -154,14 +154,13 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 /* Playback card: the Length row above Play. */
 .playback-card .length-row { margin-bottom: 14px; }
 
-/* Card order in the left column, per view (main[data-active-view]): Music puts the Series and Playback
-   first, so Play is in view; Colour puts its options first, then the Series and Image cards. */
+/* Card order in the left column, per view (main[data-active-view]): the Series card first in both.
+   Music: Series, Playback (so Play is in view), Scheme, Sound. Colour: Series, Colour, Image. */
 .controls > .series-panel { order: 1; }
 .controls > .playback-card { order: 2; }
 .controls > .scheme-card { order: 3; }
 .controls > .sound-card { order: 4; }
-main[data-active-view="color"] .controls > .color-options { order: 1; }
-main[data-active-view="color"] .controls > .series-panel { order: 2; }
+main[data-active-view="color"] .controls > .color-options { order: 2; }
 main[data-active-view="color"] .controls > .image-card { order: 3; }
 
 /* Phones and narrow windows: one column. The left column and the stage are flattened so their cards
