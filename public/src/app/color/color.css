@@ -1,0 +1,23 @@
+/* Colour view styles, from the Pi Color Generator prototype (renamed where the player already uses a name). */
+
+/* Image panel: size fields with × between, preset pills, actions. */
+.size-row { display: flex; gap: 8px; align-items: center; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pills button { font: 500 13px/1 var(--mono); background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
+.pills button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.pills button:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 8px; }
+
+/* Result card: the canvas on a checkerboard, scrolling when large; the readout under it. */
+.color-stage { background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0/16px 16px; border-radius: 8px;
+  overflow: auto; max-height: 70vh; border: 1px solid var(--line); text-align: center; }
+.color-stage canvas { display: block; image-rendering: pixelated; margin: 0 auto; max-width: none; width: auto; height: auto; }
+.readout { font: 400 13px/1.5 var(--mono); min-height: 3.2em; display: flex; gap: 10px; align-items: center; margin-top: 10px; }
+.sw { width: 34px; height: 34px; border-radius: 6px; border: 1px solid var(--line); flex: none; }
+
+/* Digits used and the first colours. */
+.color-card .list-head { margin-top: 16px; }
+.digits { font: 400 14px/1.6 var(--mono); word-break: break-all; }
+.color-list { max-height: 220px; overflow: auto; font: 400 13px/1.7 var(--mono); }
+.color-list div { display: flex; align-items: center; gap: 8px; }
+.color-list i { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); display: inline-block; flex: none; }

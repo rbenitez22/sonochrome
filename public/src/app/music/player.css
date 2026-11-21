@@ -168,5 +168,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .view-tabs button:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
 /* The Series panel's progress bar sits under the start position. */
 .series-panel .progress { margin-top: 14px; }
-/* Colour view: the stage card takes the leftover height, like the music card. */
-.stage > .color-card { flex: 1 0 320px; display: flex; flex-direction: column; min-height: 320px; }
+/* Colour view: the result card grows with its content (the stage column scrolls when it is taller),
+   and never squeezes the canvas box. */
+.stage > .color-card { flex: 1 0 auto; display: flex; flex-direction: column; }
+.stage > .color-card > * { flex: none; }

@@ -29,7 +29,8 @@ test('every id the scripts of a page look up exists in that page', () => {
   const pages = {
     'public/play.html': ['dom.js', 'progress.js', 'start.js', 'series-panel.js', 'music/controls.js', 'music/chips.js',
       'music/tabs.js', 'music/player.js', 'music/roll.js', 'music/score.js', 'music/download.js',
-      'play.js', 'views.js', 'color/view.js'],
+      'play.js', 'views.js', 'color/view.js', 'color/controls.js', 'color/canvas.js', 'color/lists.js',
+      'color/export.js'],
     'public/index.html': ['welcome.js'],
   };
   for (const [page, files] of Object.entries(pages)) {

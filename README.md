@@ -195,7 +195,12 @@ Changing the hash switches series or view in place, so browser Back and Forward 
 - **Music:**
   - **Playback** (right): Length (Notes/Time/Infinite, with its count or duration), Play and the status line.
   - **Below:** the music views, with Scheme and Sound in the left column.
-- **Colour:** arrives in step 6c (`plans/colour-tab.md`).
+- **Colour:**
+  - **Left column:** the **Colour** card, with the mode and its hint, the fill order and the readout format.
+  - **Right of the head panel:** the **Image** panel, with the size W×H, pixel size, their preset pills, Copy colors, Download PNG and the status.
+  - **Result card:** the canvas, the hover/tap readout, "Digits used" and "First 40 colors".
+  - The image is rebuilt on every change. Past `quickLength`, a **Compute** button computes first, and an image that would read past `maxLength` shrinks to fit.
+  - Modes a source refuses are disabled, with the reason (HSL and hex literal on Thue–Morse).
 
 - **Sources shape the controls:**
   - Start presets and random ranges beyond the source's `maxLength` are hidden. π stops at 19,999,999, so its 20M preset is hidden.
@@ -215,7 +220,13 @@ Changing the hash switches series or view in place, so browser Back and Forward 
   - **Clef:** Automatic picks bass for low voices; Treble and Bass apply to every voice.
 - **Download MusicXML** saves `<source id>-<start>-<end>.musicxml`, titled with the source's name and subtitled `Sonochrome: digits A–B`. Notes and Time save the whole piece; Infinite saves the bars played so far, so its button waits for Play.
 
-**Parity with the prototype** (checked in Chromium and Firefox on 2026-11-21):
+**Colour parity with `prototypes/pi-color-generator.html`** (Chromium and Firefox, 2026-11-21): 112 settings (7 modes × 4 orders × 2 sizes × 2 starts) give identical colour lists, "Digits used" text and canvas pixels, and the readout matches. The differences are deliberate:
+- the start position comes from the Series panel;
+- Download PNG replaces "Open PNG";
+- "Digits used" drops the π-only "3." prefix;
+- the spiral covers long thin images.
+
+**Music parity with the prototype** (checked in Chromium and Firefox on 2026-11-21):
 - For 72 settings (every scheme and code length, 1 or 3 voices, Notes/Time/Infinite, two starts), the chips match `prototypes/pi-notes.html` exactly, including the pending "press Play to compute" state.
 - The status lines and the score agree, and pinned codes survive Firefox's form restore the same way.
 - **Deliberate differences:** the heading, "position" in the start label, and the hidden 20M preset (π's last position is 19,999,999).
@@ -238,6 +249,11 @@ Modules behind the page, each with one job:
 | `app/music/score.js` | `renderScore(piece, clefSetting, atBeat)` (VexFlow), `showScoreMessage`, `setScoreNoteOn`, `scrollScoreTo`, and page tracking for streaming (`pageOf`, `renderedScorePage`, `scoreIsDirty`, `markScoreDirty`, `resetScorePage`) |
 | `app/music/download.js` | `updateDownload(piece, playing, playedBeats)`, `collectScore(evs, { sourceName, start, bpm, parts, clefSetting })` (pure, tested), `downloadMusicXML(piece, seq, beatsPlayed, meta)` |
 | `app/play.js` | The page entry: follows the route, creates the source's supply, fills the Series panel, runs foreground computes (`page.compute(need)`, with progress and Cancel), and switches views. Each view implements `{ name, computeVerb, setSource(source, supply, probe), refresh(), show(), hide(), status(text) }`. |
+| `app/color/view.js` | The Colour view, `createColorView(page)`: rebuilds the image, Compute when pending, the inspector, copy and PNG |
+| `app/color/controls.js` | The Colour and Image forms: `initColorControls({ onChange, onFormatChange })`, `readImageSettings()` → `{ mode, order, format, w, h, px }` (clamped: up to 300×300 cells, 200 px), `setModesFor(source, probe)`, `refreshPills()` |
+| `app/color/canvas.js` | `drawCells(image, px)` (within the browser's 16,000-pixel canvas limit), `clearCanvas()`, `cellAt(event, image)` |
+| `app/color/lists.js` | `showReadout(hit, format)`, `showDigitsUsed(seq, start, end)` (up to 600 symbols), `showColorList(image, format)` (first 40) |
+| `app/color/export.js` | `copyColors(image, format)` (all cells, in fill order), `downloadPng(name)` → `<source>-<start>-<mode>-<w>x<h>.png` |
 | `app/views.js` | The Music \| Colour tabs: `initViewTabs(onPick)` (ARIA tabs pattern), `showViewParts(name)` |
 | `app/music/player.js` | The Music view, `createMusicView(page)`: `refresh()` (only the latest of overlapping refreshes shows its result), play/stop, the 150 ms pump, the per-frame tick, status lines, background refills |
 
