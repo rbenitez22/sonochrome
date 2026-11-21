@@ -6,6 +6,7 @@
    where probe is a short seq of the source (enough to know its base). Only the active view is shown;
    show() refreshes it, so changes made while it was hidden (the start position) take effect. */
 import { $ } from './dom.js';
+import { unitWords } from './unit.js';
 import { sourceById } from '../sources/index.js';
 import { parseRoute, formatRoute } from './route.js';
 import { createSupply } from './supply.js';
@@ -31,7 +32,7 @@ async function compute(need) {
     await supply.compute(need, (pp, l) => { p = pp; label = l; showProgress(p, label, startedAt); });
     return true;
   } catch (e) {
-    if (e?.name !== 'AbortError') active.status('Could not compute the digits: ' + (e?.message ?? e));
+    if (e?.name !== 'AbortError') active.status('Could not compute the ' + unitWords(source) + ': ' + (e?.message ?? e));
     return false;
   } finally {
     clearInterval(computeTimer);

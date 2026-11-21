@@ -1,6 +1,7 @@
 /* The Music view of the player page (see app/play.js): wires the music controls, the chips, roll and
    score, and the transport, for the source and supply the page hands over. */
 import { $, fmtN } from '../dom.js';
+import { unitWord, unitWords, UnitWords } from '../unit.js';
 import { fmtTime } from '../../mappings/music/timing.js';
 import {
   notesPiece, streamPiece, fillStream, trimPlayed, eventAt, playedRange, symbolsFor, refillTarget, PREVIEW_BARS,
@@ -53,15 +54,15 @@ function updateStatus() {
 // While playing: "0:12 / 1:00 · digit 1,234" (or "0:12 · ∞").
 function showPlayStatus(el) {
   const e = eventAt(piece, 0, lastOn[0]);
-  $('status').textContent = fmtTime(el) + (total === Infinity ? ' · ∞' : ' / ' + fmtTime(total)) + (e ? ' · digit ' + fmtN(e.at) : '') +
-    (waiting ? ' · waiting for more digits…' : supply.refilling ? ' · computing more digits' : '');
+  $('status').textContent = fmtTime(el) + (total === Infinity ? ' · ∞' : ' / ' + fmtTime(total)) + (e ? ' · ' + unitWord(source) + ' ' + fmtN(e.at) : '') +
+    (waiting ? ' · waiting for more ' + unitWords(source) + '…' : supply.refilling ? ' · computing more ' + unitWords(source) : '');
 }
 
 // After stopping: why it stopped early, if it did, and which positions played.
 function showStoppedStatus() {
   if (!lastPlayed) return;
-  $('status').textContent = (endReason === 'digits' ? 'Stopped: no more computed digits. ' : endReason === 'ceiling' ? 'Stopped at the ' + fmtN(source.maxLength) + '-digit limit. ' : '') +
-    'Played digits ' + fmtN(lastPlayed.start) + '–' + fmtN(lastPlayed.end) + ' (' + fmtTime(lastPlayed.seconds) + ').';
+  $('status').textContent = (endReason === 'digits' ? 'Stopped: no more computed ' + unitWords(source) + '. ' : endReason === 'ceiling' ? 'Stopped at the ' + fmtN(source.maxLength) + '-' + unitWord(source) + ' limit. ' : '') +
+    'Played ' + unitWords(source) + ' ' + fmtN(lastPlayed.start) + '–' + fmtN(lastPlayed.end) + ' (' + fmtTime(lastPlayed.seconds) + ').';
 }
 
 // Which positions the piece reads, under the views.
@@ -69,22 +70,22 @@ function showRangeNote() {
   const { s, voices } = piece, nv = voices.length;
   if (!piece.stream) {
     const nEv = voices.reduce((a, v) => a + v.events.length, 0);
-    $('rangeNote').textContent = 'Using digits ' + fmtN(s.start) + ' to ' + fmtN(piece.nextPos - 1) + ' of ' + source.name + ', ' + nEv + ' events' +
-      (nv > 1 ? ' across ' + nv + ' instruments. Each instrument reads the digits that follow the previous one.' : '.');
+    $('rangeNote').textContent = 'Using ' + unitWords(source) + ' ' + fmtN(s.start) + ' to ' + fmtN(piece.nextPos - 1) + ' of ' + source.name + ', ' + nEv + ' events' +
+      (nv > 1 ? ' across ' + nv + ' instruments. Each instrument reads the ' + unitWords(source) + ' that follow the previous one.' : '.');
     return;
   }
-  $('rangeNote').textContent = 'Starting at digit ' + fmtN(s.start) + '. ' +
-    (piece.stream.done ? 'The whole piece is shown.' : 'The first ' + PREVIEW_BARS + ' bars are shown; playback keeps reading digits ' + (s.mode === 'time' ? 'until the time is up.' : 'until you press Stop.')) +
-    (nv > 1 ? ' In each bar, each instrument reads the digits that follow the previous one.' : '');
+  $('rangeNote').textContent = 'Starting at ' + unitWord(source) + ' ' + fmtN(s.start) + '. ' +
+    (piece.stream.done ? 'The whole piece is shown.' : 'The first ' + PREVIEW_BARS + ' bars are shown; playback keeps reading ' + unitWords(source) + ' ' + (s.mode === 'time' ? 'until the time is up.' : 'until you press Stop.')) +
+    (nv > 1 ? ' In each bar, each instrument reads the ' + unitWords(source) + ' that follow the previous one.' : '');
 }
 
 // The piece needs positions the supply can't prepare without a wait: offer to compute them on Play.
 function showPending(need) {
   const est = supply.estimateSeconds(need);
   clearChips();
-  showScoreMessage('The score appears once the digits are computed.');
+  showScoreMessage('The score appears once the ' + unitWords(source) + ' are computed.');
   drawRoll(null, null, -1);
-  $('rangeNote').textContent = 'Digits up to ' + fmtN(need) + ' are not computed yet.';
+  $('rangeNote').textContent = UnitWords(source) + ' up to ' + fmtN(need) + ' are not computed yet.';
   $('status').textContent = 'Press Play to compute them' + (est ? ' (about ' + est + ' sec on a laptop, longer on a phone).' : '.');
   pendingNeed = need;
 }
@@ -290,10 +291,10 @@ function onTabShown(name) {
 function saveMusicXML() {
   if (!piece) return;
   const saved = downloadMusicXML(piece, supply.seq, beatsPlayed(), {
-    sourceId: source.id, sourceName: source.name, bpm: +$('tempo').value, clefSetting: clefSetting(),
+    sourceId: source.id, sourceName: source.name, units: unitWords(source), bpm: +$('tempo').value, clefSetting: clefSetting(),
     parts: piece.voices.map((_, k) => ({ name: voiceLabel(k), program: GM_PROGRAM[instrumentOf(k)] || 1 })),
   });
-  if (!saved) $('status').textContent = 'Could not rebuild the score: the digits it needs are not computed.';
+  if (!saved) $('status').textContent = 'Could not rebuild the score: the ' + unitWords(source) + ' it needs are not computed.';
 }
 
 // Redraw the roll and (when stopped) the score after the window settles at a new size.

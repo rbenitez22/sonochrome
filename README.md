@@ -8,7 +8,7 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–7 of `plans/foundation.md` are done. Six series: π, e, √2, φ and ln 2 (each in bases 2–8, 10, 12 or 16) and Thue–Morse. Each can be shown as **music** (at parity with the Pi Notes prototype) or **colour** (at parity with the Pi Color Generator), and the welcome page links to both views. Plans: `plans/music-core.md`, `plans/music-player.md`, `plans/welcome-and-routing.md`, `plans/colour-tab.md`, `plans/wide-layout.md`, `plans/constants-and-bases.md`. Next is piece 8, integer series.
+**Status:** pieces 1–8 of `plans/foundation.md` are done. Nine series: the constants π, e, √2, φ and ln 2 (each in bases 2–8, 10, 12 or 16); the binary words Thue–Morse and the Fibonacci word; and the integer series of Nørgård and Recamán. Each can be shown as **music** (at parity with the Pi Notes prototype) or **colour** (at parity with the Pi Color Generator), and the welcome page links to both views. Plans: `plans/music-core.md`, `plans/music-player.md`, `plans/welcome-and-routing.md`, `plans/colour-tab.md`, `plans/wide-layout.md`, `plans/constants-and-bases.md`, `plans/integer-series.md`. Next: the foundation plan's "Later" list.
 
 ## Layout
 
@@ -256,6 +256,7 @@ Modules behind the page, each with one job:
 | `app/dom.js` | `$(id)`, `fmtN(n)`, `fillSelect(select, [[value, label]])` |
 | `app/progress.js` | `showProgress(p, label, startedAt)`, `hideProgress()` |
 | `app/start.js` | The start position in the Series panel: `initStart(onChange)`, `readStart()` (validated, clamped to the source), `setStartLimit(source)` (hides presets and random ranges past it), `randomizeStart()`, `randomEachPlay()` |
+| `app/unit.js` | `unitWord(source)` / `unitWords(source)` / `UnitWords(source)`: "digit(s)" for digit series, "term(s)" for integer series, used in every message, label and the MusicXML subtitle |
 | `app/series-panel.js` | `showSeries(source, params, onParamsChange)`: the panel heading, description, page titles, and a select per source param. `routeParams(source, params)` keeps the valid, non-default params for the route; `paramValue(param, params)` gives one param's value. |
 | `app/route.js` | `parseRoute(hash)`, `formatRoute(id, params)`, `playerHref(id, params)` |
 | `app/music/controls.js` | The Length row and the Scheme and Sound forms: `initControls({ onChange, onTempoInput, onTempoSettled })`, `setSchemesFor(source, seq)`, `readSettings()` (with `readStart()`), `readOverrides(s)`, `showRows(s)`, voice helpers, `clefSetting()`. Pinned codes are kept per code length, and survive Firefox's form restore on reload. |
@@ -352,7 +353,7 @@ See `plans/foundation.md`:
 5. The welcome page and routing (done)
 6. The Colour tab (done)
 7. Constants (e, √2, φ, ln 2) in any number base (done)
-8. Integer series (Nørgård, Recamán, Fibonacci word)
+8. Integer series (Nørgård, Recamán, Fibonacci word) (done)
 
 Later: more series, key signatures, MIDI export, a played-range history, and a Rust/Leptos port.
 

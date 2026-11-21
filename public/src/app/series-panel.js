@@ -1,5 +1,6 @@
 // The Series panel's heading, its source params (e.g. the base) and the page's titles for the current source.
 import { $ } from './dom.js';
+import { unitWord, unitWords } from './unit.js';
 
 // Names shown beside some bases.
 const BASE_NAMES = { 2: 'binary', 8: 'octal', 10: 'decimal', 12: 'duodecimal', 16: 'hexadecimal' };
@@ -51,6 +52,9 @@ export function showSeries(source, params, onParamsChange) {
   $('seriesName').textContent = source.name;
   $('seriesTitle').textContent = source.name;
   $('seriesBlurb').textContent = source.blurb;
-  $('bar').setAttribute('aria-label', 'Computing digits of ' + source.name);
+  $('seriesUnits').textContent = unitWords(source);
+  $('unitsTab').textContent = unitWords(source)[0].toUpperCase() + unitWords(source).slice(1);
+  $('startLabel').textContent = 'Start at position (0 is the first ' + unitWord(source) + '). Type 4M, 250k or 4,000,000.';
+  $('bar').setAttribute('aria-label', 'Computing ' + unitWords(source) + ' of ' + source.name);
   renderParams(source, params, onParamsChange);
 }

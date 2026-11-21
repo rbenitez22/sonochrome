@@ -4,13 +4,14 @@ import { formatColor } from '../../mappings/color/convert.js';
 import { symbolString } from '../../mappings/music/reader.js';
 
 const LIST_LENGTH = 40, DIGITS_SHOWN = 600;
-const EMPTY_READOUT = '<span class="sw" style="background:transparent"></span><span>Hover or tap a cell to see its digits and color.</span>';
-
-export function clearReadout() { $('readout').innerHTML = EMPTY_READOUT; }
+// units: 'digits' or 'terms' (see app/unit.js).
+export function clearReadout(units = 'digits') {
+  $('readout').innerHTML = `<span class="sw" style="background:transparent"></span><span>Hover or tap a cell to see its ${units} and color.</span>`;
+}
 
 // hit = { x, y, c } from cellAt; format is the readout format.
-export function showReadout({ x, y, c }, format) {
-  $('readout').innerHTML = `<span class="sw" style="background:rgb(${c.rgb.join(',')})"></span><span>cell (${x}, ${y}) · digits <b>${c.symbols}</b> at position ${c.start}<br>${formatColor(c.rgb, format)}</span>`;
+export function showReadout({ x, y, c }, format, units = 'digits') {
+  $('readout').innerHTML = `<span class="sw" style="background:rgb(${c.rgb.join(',')})"></span><span>cell (${x}, ${y}) · ${units} <b>${c.symbols}</b> at position ${c.start}<br>${formatColor(c.rgb, format)}</span>`;
 }
 
 // The symbols the image reads, from start to end (exclusive), up to DIGITS_SHOWN of them.

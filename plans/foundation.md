@@ -135,7 +135,7 @@ Nothing in Sonochrome is built around one series. This piece proves the interfac
 - The **base** param works for every constant: compute ⌊x·bⁿ⌋ and convert with `mpz_get_str(base)`. That gives, for example, π in base 12, one digit per chromatic note.
 - Tests: known digit prefixes for each constant and base.
 
-### 8. Integer series
+### 8. Integer series (done 2026-11-21; steps in `plans/integer-series.md`)
 - Nørgård's infinity series, Recamán and the Fibonacci word (Thue–Morse arrives in piece 2), with the new `int` schemes (value → degree, value → interval).
 - Tests: OEIS prefixes (A004718, A005132, A003849).
 

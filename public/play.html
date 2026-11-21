@@ -15,7 +15,7 @@
 <main data-active-view="music">
   <header class="masthead">
     <h1>Sono<span>chrome</span></h1>
-    <p class="sub">Read the digits of <span id="seriesName"></span> as music or colour. Pick how digits become notes or colours.</p>
+    <p class="sub">Read the <span id="seriesUnits">digits</span> of <span id="seriesName"></span> as music or colour. Pick how they become notes or colours.</p>
     <div class="view-tabs" role="tablist" aria-label="Views" id="viewTabs">
       <button type="button" role="tab" id="view-music" data-pick="music" aria-controls="musicParts" aria-selected="true">Music</button>
       <button type="button" role="tab" id="view-color" data-pick="color" aria-controls="colorParts" aria-selected="false" tabindex="-1">Colour</button>
@@ -26,7 +26,7 @@
   <section class="card music-card" aria-label="Music" data-view="music">
     <div class="cardhead">
       <div class="tabs" role="tablist" aria-label="Music views" id="tabs">
-        <button type="button" role="tab" id="tab-digits" data-tab="digits" aria-controls="digitsBody" aria-selected="true">Digits<span class="long"> &rarr; notes</span></button>
+        <button type="button" role="tab" id="tab-digits" data-tab="digits" aria-controls="digitsBody" aria-selected="true"><span id="unitsTab">Digits</span><span class="long"> &rarr; notes</span></button>
         <button type="button" role="tab" id="tab-roll" data-tab="roll" aria-controls="rollBody" aria-selected="false" tabindex="-1">Piano roll</button>
         <button type="button" role="tab" id="tab-sheet" data-tab="sheet" aria-controls="sheetBody" aria-selected="false" tabindex="-1">Sheet music</button>
       </div>
@@ -50,9 +50,9 @@
 
   <section class="card color-card" id="colorParts" aria-label="Colour" data-view="color" hidden>
     <h2>Result</h2>
-    <div class="color-stage"><canvas id="cv" width="320" height="320" role="img" aria-label="The digits as coloured cells"></canvas></div>
+    <div class="color-stage"><canvas id="cv" width="320" height="320" role="img" aria-label="The series as coloured cells"></canvas></div>
     <div class="readout" id="readout"></div>
-    <h2 class="list-head">Digits used</h2>
+    <h2 class="list-head" id="digitsHead">Digits used</h2>
     <div class="digits" id="digits"></div>
     <h2 class="list-head">First 40 colors</h2>
     <div class="color-list" id="list"></div>
@@ -70,7 +70,7 @@
     <div class="grid series-params" id="seriesParams" hidden></div>
     <div class="grid">
       <div class="field wide">
-        <label for="start">Start at position (0 is the first digit). Type 4M, 250k or 4,000,000.</label>
+        <label for="start" id="startLabel">Start at position (0 is the first digit). Type 4M, 250k or 4,000,000.</label>
         <input type="text" id="start" value="0" inputmode="text" autocomplete="off" spellcheck="false">
         <div class="presets" id="presets">
           <button type="button" data-v="0">0</button><button type="button" data-v="1000">1,000</button><button type="button" data-v="100000">100,000</button><button type="button" data-v="1000000">1M</button><button type="button" data-v="4000000">4M</button><button type="button" data-v="10000000">10M</button><button type="button" data-v="20000000">20M</button>
@@ -170,7 +170,7 @@
     <h2>Scheme</h2>
     <div class="grid">
       <div class="field wide">
-        <label for="scheme">How digits become notes</label>
+        <label for="scheme">How the series becomes notes</label>
         <select id="scheme">
           <option value="codes">Codes (groups of digits)</option>
           <option value="degrees">One digit = one scale step</option>

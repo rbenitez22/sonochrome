@@ -5,6 +5,7 @@ import { $ } from './dom.js';
 import { SOURCES } from '../sources/index.js';
 import { playerHref } from './route.js';
 import { symbolString } from '../mappings/music/reader.js';
+import { UnitWords } from './unit.js';
 
 const PREVIEW = 32;
 
@@ -22,11 +23,12 @@ function card(source) {
   const glyph = source.glyph ?? source.name;
   const hideName = glyph === source.name ? ' class="visually-hidden"' : '';
   el.innerHTML = '<span class="sym" aria-hidden="true"></span><h2' + hideName + '></h2><p class="blurb"></p>' +
-    '<p class="preview" aria-label="First digits"></p>' +
+    '<p class="preview"></p>' +
     '<div class="go"><a class="hear">Hear it &rarr;</a><a class="see">See it &rarr;</a></div>';
   el.querySelector('.sym').textContent = glyph;
   el.querySelector('h2').textContent = source.name;
   el.querySelector('.blurb').textContent = source.blurb;
+  el.querySelector('.preview').setAttribute('aria-label', 'First ' + UnitWords(source).toLowerCase());
   const hear = el.querySelector('.hear'), see = el.querySelector('.see');
   hear.href = playerHref(source.id);
   see.href = playerHref(source.id, {}, 'color');
