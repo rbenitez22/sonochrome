@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Sonochrome icon: π drawn as two beamed eighth notes. The bar of π is the beam, its legs are the stems. -->
+  <rect width="64" height="64" rx="14" fill="#0b7a80"/>
+  <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round">
+    <!-- beam, with the curl of π at its left end -->
+    <path d="M11.5 24 C10.5 18.5 14 16.4 19 16.6 L50.5 13.2" stroke-width="7.4"/>
+    <!-- stems: the left one leans like the leg of π, the right one stands straight -->
+    <path d="M26 18.5 C25.8 30 24.8 39 22.6 46.5" stroke-width="5"/>
+    <path d="M44 15.6 C43.7 27 43.8 37 44.3 45" stroke-width="5"/>
+  </g>
+  <!-- note heads, tilted as engraved, each meeting its stem on the right -->
+  <ellipse cx="16.2" cy="48.4" rx="7.4" ry="5.3" transform="rotate(-22 16.2 48.4)" fill="#ffffff"/>
+  <ellipse cx="38.1" cy="46.6" rx="6.9" ry="5" transform="rotate(-22 38.1 46.6)" fill="#ffffff"/>
+</svg>

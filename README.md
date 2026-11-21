@@ -8,13 +8,15 @@ Sonochrome generalises two single-file prototypes, kept unchanged in `prototypes
 - `pi-notes.html`: the digits of π → melody, piano roll and sheet music, with MusicXML download. Copied from pi-notes at commit `a51e4e5`.
 - `pi-color-generator.html`: the digits of π → coloured cells.
 
-**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). Piece 4, the music player page (`plans/music-player.md`), is under way: step 4a (the piece state and the symbol supply) is done. The site is still a placeholder welcome page.
+**Status:** pieces 1–3 of `plans/foundation.md` are done: the skeleton and deploy, the source interface with two sources (π and Thue–Morse), and the music core as pure modules (`plans/music-core.md`). Piece 4, the music player page (`plans/music-player.md`), is under way: steps 4a (the piece state and the symbol supply) and 4b (the page without sound) are done. `play.html` shows a series as notes but doesn't play yet; the welcome page is still a placeholder.
 
 ## Layout
 
 ```
 public/          the deployed site: only this folder is served
   index.html     welcome page (series cards)
+  play.html      the player: play.html#<source id>, e.g. play.html#thue-morse
+  favicon.svg    the icon: π drawn as two beamed eighth notes (the bar is the beam, the legs the stems)
   _headers       response headers for Cloudflare
   src/sources/   one ES module per series, plus the shared seq helpers (see Sources)
   src/workers/   digits.js: module Web Worker that computes constants from position 0
@@ -139,7 +141,27 @@ const xml = toMusicXML({ title: 'π', subtitle: 'From 0', bpm: 100,
 
 ## Player
 
-`public/src/app/` holds the code behind the pages. Piece 4 builds the music player on it (`plans/music-player.md`); so far it has the two modules without DOM access:
+`public/play.html` is the music player, at parity with the Pi Notes prototype's layout and controls. It opens the source named in the hash (`play.html#thue-morse`), or the first source if the hash names none. Until the welcome page lists the series (piece 5), a **Series** select in Options switches between them.
+
+- **Sources shape the controls:**
+  - Start presets and random ranges beyond the source's `maxLength` are hidden. π stops at 19,999,999, so its 20M preset is hidden.
+  - Schemes the source refuses are disabled, with the reason as a tooltip. If the current one is refused, the page picks the first allowed scheme.
+- **Within `quickLength`,** changing a setting rebuilds the piece straight away. Past it, the page says "press Play to compute", with the source's time estimate. Play then computes with a progress bar and a Cancel button.
+- **Sound, the piano roll, the score and MusicXML** arrive in steps 4c and 4d.
+
+Modules behind the page, each with one job:
+
+| Module | Job |
+|---|---|
+| `app/dom.js` | `$(id)`, `fmtN(n)`, `fillSelect(select, [[value, label]])` |
+| `app/progress.js` | `showProgress(p, label, startedAt)`, `hideProgress()` |
+| `app/music/controls.js` | The Options, Scheme and Sound forms: `initControls({ onChange, onTempoInput, onTempoSettled })`, `setSource(source, seq)`, `readSettings()`, `readOverrides(s)`, `showRows(s)`, voice helpers, random start. Pinned codes are kept per code length, and survive Firefox's form restore on reload. |
+| `app/music/chips.js` | The Digits → notes view: `renderChips`, `appendChips`, `removeChips`, `setChipOn`, `scrollChipIntoView`, keyed by logical event index |
+| `app/music/tabs.js` | The view tabs (ARIA keyboard pattern), remembered under `sonochrome.music-tab` |
+| `app/music/instruments.js` | `INSTRUMENTS`, `GM_PROGRAM`, `instrumentLabel(id)` |
+| `app/music/player.js` | Wiring: the source from the hash, `refresh()` (only the latest of overlapping refreshes shows its result), computing before playback |
+
+The two modules without DOM access:
 
 **`app/supply.js`**: `createSupply(source, params)` holds the seq a page reads from, and gets more of it.
 

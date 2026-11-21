@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sonochrome</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="src/app/music/player.css">
+</head>
+<body>
+<main>
+  <header class="masthead">
+    <h1>Sono<span>chrome</span></h1>
+    <p class="sub">Read the digits of <span id="seriesName"></span> as music. Pick a scheme for turning digits into notes, then press play.</p>
+  </header>
+
+  <div class="stage">
+  <section class="card head-panel" aria-label="Playback">
+    <div class="head-options">
+      <h2>Options</h2>
+      <div class="grid">
+        <div class="field wide">
+          <label for="series">Series</label>
+          <select id="series"></select>
+        </div>
+        <div class="field">
+          <label for="lenMode">Length</label>
+          <select id="lenMode"><option value="notes">Notes</option><option value="time">Time</option><option value="infinite">Infinite (until Stop)</option></select>
+        </div>
+        <div class="field" id="rowCount">
+          <label for="count">Notes to play</label>
+          <input type="number" id="count" min="4" max="128" value="24">
+        </div>
+        <div class="field" id="rowDuration" hidden>
+          <label for="duration">Time (m:ss)</label>
+          <input type="text" id="duration" value="1:00" inputmode="numeric" autocomplete="off" spellcheck="false">
+          <p class="err" id="durErr" hidden></p>
+        </div>
+        <div class="field wide">
+          <label for="start">Start at position (0 is the first digit). Type 4M, 250k or 4,000,000.</label>
+          <input type="text" id="start" value="0" inputmode="text" autocomplete="off" spellcheck="false">
+          <div class="presets" id="presets">
+            <button type="button" data-v="0">0</button><button type="button" data-v="1000">1,000</button><button type="button" data-v="100000">100,000</button><button type="button" data-v="1000000">1M</button><button type="button" data-v="4000000">4M</button><button type="button" data-v="10000000">10M</button><button type="button" data-v="20000000">20M</button>
+          </div>
+          <p class="err" id="startErr" hidden></p>
+          <div class="random-row">
+            <button class="ghost" id="randomBtn" type="button">🎲 Random</button>
+            <label for="randomMax">up to</label>
+            <select id="randomMax">
+              <option value="20000">20k</option><option value="100000">100k</option><option value="1000000" selected>1M</option><option value="10000000">10M</option><option value="20000000">20M</option>
+            </select>
+            <label class="check" for="randomEach"><input type="checkbox" id="randomEach"> Random each play</label>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="head-play">
+      <div class="transport">
+        <button class="play" id="play" type="button">Play</button>
+        <div class="status" id="status" aria-live="polite"></div>
+      </div>
+      <div class="progress" id="prog" hidden>
+        <div class="bar" role="progressbar" aria-label="Computing digits" aria-valuemin="0" aria-valuemax="100" id="bar"><div class="fill" id="fill"></div></div>
+        <div class="progrow"><div class="status" id="progText"></div><button class="ghost" id="cancel" type="button">Cancel</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card music-card" aria-label="Music">
+    <div class="cardhead">
+      <div class="tabs" role="tablist" aria-label="Music views" id="tabs">
+        <button type="button" role="tab" id="tab-digits" data-tab="digits" aria-controls="digitsBody" aria-selected="true">Digits<span class="long"> &rarr; notes</span></button>
+        <button type="button" role="tab" id="tab-roll" data-tab="roll" aria-controls="rollBody" aria-selected="false" tabindex="-1">Piano roll</button>
+        <button type="button" role="tab" id="tab-sheet" data-tab="sheet" aria-controls="sheetBody" aria-selected="false" tabindex="-1">Sheet music</button>
+      </div>
+      <div class="cardtools" id="sheetTools" hidden>
+        <label for="clef">Clef</label>
+        <select id="clef"><option value="auto">Automatic</option><option value="treble">Treble</option><option value="bass">Bass</option></select>
+        <button type="button" class="ghost" id="dlXml" title="Save the score as MusicXML (opens in MuseScore and other notation programs)">Download MusicXML</button>
+      </div>
+    </div>
+    <div class="tabpanel" id="digitsBody" role="tabpanel" aria-labelledby="tab-digits">
+      <div id="chipsWrap"></div>
+      <p class="range-note" id="rangeNote"></p>
+    </div>
+    <div class="tabpanel" id="rollBody" role="tabpanel" aria-labelledby="tab-roll" hidden>
+      <canvas id="roll" role="img" aria-label="Piano roll of the generated melody"></canvas>
+    </div>
+    <div class="tabpanel" id="sheetBody" role="tabpanel" aria-labelledby="tab-sheet" hidden>
+      <div class="sheet" id="sheet"></div>
+    </div>
+  </section>
+  </div>
+
+  <aside class="controls" aria-label="Controls">
+  <section class="card" aria-label="Scheme">
+    <h2>Scheme</h2>
+    <div class="grid">
+      <div class="field wide">
+        <label for="scheme">How digits become notes</label>
+        <select id="scheme">
+          <option value="codes">Codes (groups of digits)</option>
+          <option value="degrees">One digit = one scale step</option>
+          <option value="pairs">Pairs: pitch + length</option>
+          <option value="steps">Digits as melodic steps</option>
+        </select>
+      </div>
+      <p class="scheme-note wide field" id="schemeNote"></p>
+      <div class="field" id="rowCodeLen">
+        <label for="codeLen">Digits per code</label>
+        <select id="codeLen"><option>2</option><option>3</option><option selected>4</option></select>
+      </div>
+      <div class="field" id="rowLen">
+        <label for="fixedLen">Note length</label>
+        <select id="fixedLen"><option value="0.5">Eighth</option><option value="1" selected>Quarter</option><option value="2">Half</option></select>
+      </div>
+      <div class="field" id="rowRange">
+        <label for="range">Range (octaves)</label>
+        <select id="range"><option>1</option><option selected>2</option><option>3</option></select>
+      </div>
+      <div class="field wide" id="rowOver">
+        <label for="over" id="overLabel">Pinned 4-digit codes (one per line: code = note or rest, then length)</label>
+        <textarea id="over" spellcheck="false">3141 = C4 1/2
+1459 = rest 1/4
+2635 = Bb3 1/4</textarea>
+        <p class="err" id="overErr" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" aria-label="Sound">
+    <h2>Sound</h2>
+    <div class="grid">
+      <div class="field">
+        <label for="key">Key</label>
+        <select id="key"></select>
+      </div>
+      <div class="field">
+        <label for="scale">Scale</label>
+        <select id="scale"></select>
+      </div>
+      <div class="field wide">
+        <label for="nv">Number of instruments</label>
+        <select id="nv"><option>1</option><option>2</option><option>3</option><option>4</option></select>
+      </div>
+      <div class="grid wide" id="voiceRows" style="grid-column:1 / -1"></div>
+      <div class="field wide">
+        <label for="tempo">Tempo: <span id="tempoOut">110</span> BPM</label>
+        <input type="range" id="tempo" min="40" max="200" value="110">
+      </div>
+    </div>
+  </section>
+  </aside>
+</main>
+
+<script type="module" src="src/app/music/player.js"></script>
+</body>
+</html>
