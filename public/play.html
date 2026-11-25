@@ -50,10 +50,10 @@
         <button type="button" role="tab" id="tab-sheet" data-tab="sheet" aria-controls="sheetBody" aria-selected="false" tabindex="-1">Sheet music</button>
       </div>
       <div class="cardtools" id="sheetTools" hidden>
-        <label for="clef">Clef</label>
-        <select id="clef"><option value="auto">Automatic</option><option value="treble">Treble</option><option value="bass">Bass</option></select>
-        <label for="keySig">Key signature</label>
-        <select id="keySig"><option value="auto">From the key and scale</option><option value="none">None (C)</option></select>
+        <span class="tool"><label for="clef">Clef</label>
+        <select id="clef"><option value="auto">Automatic</option><option value="treble">Treble</option><option value="bass">Bass</option></select></span>
+        <span class="tool"><label for="keySig">Key signature</label>
+        <select id="keySig"><option value="auto">From the key and scale</option><option value="none">None (C)</option></select></span>
         <button type="button" class="ghost" id="dlXml" title="Save the score as MusicXML (opens in MuseScore and other notation programs)">Download MusicXML</button>
         <button type="button" class="ghost" id="dlMidi" title="Save the piece as a MIDI file (opens in music software and MIDI players)">Download MIDI</button>
       </div>

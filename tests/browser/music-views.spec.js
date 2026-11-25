@@ -162,3 +162,16 @@ test('MIDI downloads for Notes, Time and Infinite (after playing), with tracks, 
   expect((await saveMidi(page)).name).toMatch(/^pi-0-\d+\.mid$/);
 });
 
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 375, height: 740 } });
+
+  test('no music tab, nor the sheet music tools, is wider than the screen', async ({ page }) => {
+    await openPlayer(page, 'pi');
+    for (const tab of ['digits', 'roll', 'sheet']) {
+      await page.click('#tab-' + tab);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(375);
+    }
+    await expect(page.locator('#dlMidi')).toBeInViewport();
+  });
+});
