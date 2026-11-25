@@ -45,6 +45,11 @@ Requested on 2026-11-24, after piece 3. Today Compute shows (in the Image card) 
 - Phones: on Colour, the order becomes Series, Colour, Image (all collapsed), then the Result card with its header row near the top.
 - **Checks:** a test that Draw with Random each time changes the start and the image; that Compute shows while digits are missing and turns back to Draw; the existing colour tests updated for the moved buttons.
 
+## Follow-ups (2026-11-24)
+
+- Phones: the sheet music tools (Clef, Key signature, downloads) wrap inside the music card instead of overflowing it.
+- Phones, Music: Scheme and Sound move above the music card (Series, Scheme, Sound, music card), as on Colour, since all settings cards are collapsed.
+
 ## After each piece
 
 README updated, browser suite run, commit; deploy when you say.

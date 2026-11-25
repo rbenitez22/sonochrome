@@ -186,16 +186,17 @@ main[data-active-view="color"] .controls > .color-options { order: 2; }
 main[data-active-view="color"] .controls > .image-card { order: 3; }
 
 /* Phones and narrow windows: one column. The left column and the stage are flattened so their cards
-   interleave: what is needed to start first, then the view, then the rest. */
+   interleave: the settings cards first (collapsed, see collapse.js), then the view's output card.
+   Music: Series, Scheme, Sound, the music card. Colour: Series, Colour, Image, the Result card. */
 @media (max-width: 899px) {
   main { display: flex; flex-direction: column; }
   .controls, .stage { display: contents; }
   /* Same specificity as the desktop rules above, so these win on narrow screens. */
   .masthead { order: 0; }
   main[data-active-view] .controls > .series-panel { order: 1; }
-  main[data-active-view] .stage > .music-card { order: 2; }
-  main[data-active-view] .controls > .scheme-card { order: 3; }
-  main[data-active-view] .controls > .sound-card { order: 4; }
+  main[data-active-view] .controls > .scheme-card { order: 2; }
+  main[data-active-view] .controls > .sound-card { order: 3; }
+  main[data-active-view] .stage > .music-card { order: 4; }
   main[data-active-view="color"] .controls > .color-options { order: 2; }
   main[data-active-view="color"] .controls > .image-card { order: 3; }
   main[data-active-view="color"] .stage > .color-card { order: 4; }

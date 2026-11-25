@@ -14,9 +14,10 @@ test.describe('on a phone', () => {
     await expect(page.locator('.series-panel .card-summary')).toHaveText('π · base 10 · from 0');
     await expect(page.locator('.scheme-card .card-summary')).toHaveText('Codes (groups of digits) · 4 digits per code');
     await expect(page.locator('.sound-card .card-summary')).toHaveText(/^C major · 1 instrument · 110 BPM$/);
-    // The music card comes right after the collapsed Series card.
-    const seriesBottom = await page.locator('.series-panel').evaluate((el) => el.getBoundingClientRect().bottom);
-    expect(seriesBottom).toBeLessThan(400);
+    // The collapsed settings cards come first, then the music card near the top of the page.
+    const box = (sel) => page.locator(sel).evaluate((el) => el.getBoundingClientRect());
+    expect((await box('.sound-card')).bottom).toBeLessThan((await box('.music-card')).top);
+    expect((await box('.music-card')).top).toBeLessThan(500);
   });
 
   test('a heading opens its card, the summary follows edits, and the state survives a reload', async ({ page }) => {
