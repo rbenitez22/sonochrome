@@ -210,3 +210,15 @@ main[data-active-view="color"] .controls > .image-card { order: 3; }
    and never squeezes the canvas box. */
 .stage > .color-card { flex: 1 0 auto; display: flex; flex-direction: column; }
 .stage > .color-card > * { flex: none; }
+/* Collapsible settings cards (phones, collapse.js): the heading is a full-width button with the title, a
+   one-line summary of the card's settings, and a chevron that points up while the card is open. */
+.card-toggle { display: flex; align-items: center; gap: 10px; width: 100%; padding: 4px 0; margin: -4px 0; background: transparent;
+  border: 0; color: inherit; font: inherit; letter-spacing: inherit; text-transform: inherit; text-align: left; cursor: pointer; }
+.card-toggle:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; border-radius: 4px; }
+.card-title { flex: none; }
+.card-summary { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 400 13px/1.2 var(--body); text-transform: none; letter-spacing: 0; color: var(--ink); }
+.card-chevron { flex: none; width: 16px; height: 16px; transform: rotate(180deg); transition: transform 0.15s; }
+.card.collapsed .card-chevron { transform: none; }
+.card.collapsed > h2 { margin-bottom: 0; }
+.card.collapsed > [data-collapse-keep]:not([hidden]) { margin-top: 12px; }

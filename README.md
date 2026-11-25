@@ -234,6 +234,7 @@ Changing the hash switches series or view in place, so browser Back and Forward 
   - the source's params: a **Base** select for the constants, kept in the route as `?base=12` (left out at the default of 10);
   - the start position, with presets and random start;
   - the progress bar and Cancel, when a view needs digits computed first.
+- **Collapsible cards on phones** (under 900 px, `app/collapse.js`): each settings card's heading (Series, Scheme, Sound; Colour, Image) becomes a button with the title, a one-line summary of its settings (`app/card-summaries.js`, e.g. "π · base 10 · from 0") and a chevron. Cards start collapsed, so the output is close to the top; each card's open or closed state is kept in `localStorage` (`sonochrome.collapsed.<card class>`). The progress bar, the Image card's buttons and its status are marked `data-collapse-keep` and stay visible when collapsed. Wider than 900 px the cards are plain.
 - **Card order** is CSS `order`, keyed on `main[data-active-view]`, which `showViewParts` sets. No elements move.
 - **Phones (under 900 px):** everything is one column. Music: Series, the music card (with its playback row), Scheme, Sound. Colour: Series, the Colour options and Image, then the Result card.
 - **Colour view behaviour:**
@@ -276,6 +277,8 @@ Modules behind the page, each with one job:
 | `app/color/canvas.js` | `drawCells(image, px)`, `clearCanvas()`, `cellAt(event, image)`, `cellPixels(w, h, px)`. The pixels per cell are lowered when needed, so the canvas stays within 16,000 px a side and 4096 × 4096 px in area. That area limit is Safari's on iPhone and iPad, which otherwise draws a blank canvas; the same cap applies in every browser. The status line says when it applies (300×300 cells at 20 px → 13 px). |
 | `app/color/lists.js` | `showReadout(hit, format)`, `showDigitsUsed(seq, start, end)` (up to 600 symbols), `showColorList(image, format)` (first 40) |
 | `app/color/export.js` | `copyColors(image, format)` (all cells, in fill order), `downloadPng(name)` → `<source>-<start>-<mode>-<w>x<h>.png` |
+| `app/collapse.js` | `initCollapsible(cards, summaries)`: makes each card's `<h2>` a toggle on narrow screens and wraps the rest (except `data-collapse-keep` children) in a `.card-body`; `refreshSummaries()` rewrites the summaries (play.js calls it after every input, change or click, once per frame, and after a route change). |
+| `app/card-summaries.js` | `SUMMARIES`: per card class (`series-panel`, `scheme-card`, `sound-card`, `color-options`, `image-card`), a function returning its one-line summary from the fields. |
 | `app/views.js` | The Music \| Colour tabs: `initViewTabs(onPick)` (ARIA tabs pattern), `showViewParts(name)` |
 | `app/music/player.js` | The Music view, `createMusicView(page)`: `refresh()` (only the latest of overlapping refreshes shows its result), play/stop, the 150 ms pump, the per-frame tick, status lines, background refills |
 
@@ -331,6 +334,7 @@ const seq = (await supply.ready(5_000)) ?? (await supply.compute(5_000_000, (p, 
 | `music-views.spec.js` | MIDI downloads in every mode (read back: tracks, programs, title, key); key signatures (E major's four sharps and its chips' sharps; None (C) brings back flats; F minor's four flats); the roll draws; the score draws, redraws for a clef, highlights, and its tab is remembered; page turns at bar 9 (@slow); MusicXML downloads in every mode are well formed with full bars; score rows fit their notes |
 | `color-parity.spec.js` | @slow: 112 settings (7 modes × 4 orders × 2 sizes × 2 starts) give the same colour list, digits and canvas pixels as `prototypes/pi-color-generator.html`; the readout and readout formats match |
 | `color.spec.js` | Compute past `quickLength` (needs GMP); shrinking to fit at Recamán's cap; the iOS canvas-area cap, painted to the corner; the PNG's name; modes a series refuses |
+| `collapse.spec.js` | On a phone: settings cards start collapsed with summaries; a heading opens its card, the summary follows edits, the state survives a reload; the Image card's buttons stay visible collapsed. Wide: no toggles. |
 | `series.spec.js` | All nine series play and draw with the right default scheme, colour mode and digit/term wording; base 12 and 16; the base-7 steps note; ln 2 in hex from 100k in the worker (needs GMP); integer readouts |
 
 ## Requirements

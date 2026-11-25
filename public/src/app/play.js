@@ -16,6 +16,8 @@ import { showSeries, routeParams } from './series-panel.js';
 import { initViewTabs, showViewParts } from './views.js';
 import { createMusicView } from './music/player.js';
 import { createColorView } from './color/view.js';
+import { initCollapsible, refreshSummaries } from './collapse.js';
+import { SUMMARIES } from './card-summaries.js';
 
 let source = null, supply = null, active = null, computeTimer = 0;
 
@@ -73,9 +75,16 @@ async function onRoute() {
   else if (active && active.name !== route.view) active.hide();
   else if (active) return;
   selectView(route.view);
+  refreshSummaries();
 }
 
 window.addEventListener('hashchange', onRoute);
+// Settings cards collapse on phones; their summaries follow every edit (refreshed once per frame).
+initCollapsible([...document.querySelectorAll('.controls > .card')], SUMMARIES);
+let summaryFrame = 0;
+for (const type of ['input', 'change', 'click']) {
+  document.addEventListener(type, () => { cancelAnimationFrame(summaryFrame); summaryFrame = requestAnimationFrame(refreshSummaries); });
+}
 initViewTabs((name) => { location.hash = formatRoute(source.id, supply.params, name); });
 initStart(() => active?.refresh());
 $('cancel').addEventListener('click', () => {
