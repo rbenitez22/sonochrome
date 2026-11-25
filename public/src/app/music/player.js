@@ -238,8 +238,14 @@ async function startPlayback() {
   updateDownload(piece, true, 0);
   pump();
   timer = setInterval(pump, PUMP_MS);
-  $('play').textContent = 'Stop';
+  showPlaying(true);
   raf = requestAnimationFrame(tick);
+}
+
+// The Play button as Stop while playing: its label (read by screen readers, hidden on phones) and its icon.
+function showPlaying(on) {
+  $('play').dataset.playing = on;
+  $('play').querySelector('.play-label').textContent = on ? 'Stop' : 'Play';
 }
 
 function stop() {
@@ -257,7 +263,7 @@ function stop() {
   stopAudio();
   if (piece) piece.voices.forEach((_, k) => setOn(k, lastOn[k], false));
   lastOn = piece ? piece.voices.map(() => -1) : [];
-  $('play').textContent = 'Play';
+  showPlaying(false);
   updateDownload(piece, false, playedBeats);
   showStoppedStatus();
   drawRoll(piece, null, -1, sheetBeat);

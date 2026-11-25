@@ -227,7 +227,7 @@ Changing the hash switches series or view in place, so browser Back and Forward 
 
 **Layout** (`plans/wide-layout.md`, `plans/playback-header.md`): the page is up to 1440 px wide. A 440 px left column holds every settings card, and the right column holds the active view's card at full height, so a Colour image or the music views are fully in view.
 - **Left column, top to bottom:**
-  - **Music:** Series, Scheme, Sound. Playback (Length, Notes to play or Time, Play, status) is a row at the top of the music card, above its tabs, so Play is always beside the output.
+  - **Music:** Series, Scheme, Sound. Playback (Length, Notes to play or Time, Play, status) is a row at the top of the music card, above its tabs, so Play is always beside the output. Under 600 px the Play button is an icon only: a triangle, a square while playing (`data-playing` on `#play`, set by `showPlaying` in `player.js`); its text label stays for screen readers, so the button's name is still Play or Stop.
   - **Colour:** Series, Colour (mode, fill order, readout format), Image (size and pixel size with presets, Copy colors, Download PNG, status).
 - **Series card** (shared by both views):
   - the series name, its description and a "← All series" link;
@@ -326,7 +326,7 @@ const seq = (await supply.ready(5_000)) ?? (await supply.compute(5_000_000, (p, 
 | `welcome.spec.js` | The nine cards in order with their previews (terms comma-separated); Hear it / See it open the right view; All series comes back |
 | `routes.spec.js` | Unknown or missing sources go to the welcome page; views in the hash, the tabs, Back; arrow keys on the tabs; switching series in place; `?base=` with Back; the shared start position |
 | `music-parity.spec.js` | @slow: 72 settings (every scheme and code length, 1 or 3 voices, every length mode, two starts) give the same chips and status as `prototypes/pi-notes.html`; pinned codes behave the same across a reload |
-| `playback.spec.js` | Notes ends and highlights (@slow); Time stops on time and replays (@slow); Infinite drops old chips (@slow); random each play; the tempo stops playback; a due refill starts the digits worker (needs GMP) |
+| `playback.spec.js` | Notes ends and highlights (@slow); Time stops on time and replays (@slow); Infinite drops old chips (@slow); random each play; the tempo stops playback; a due refill starts the digits worker (needs GMP); on a phone, Play is an icon that turns into Stop and keeps its name |
 | `refill.spec.js` | Fake sources registered in the page: a slow refill makes the music wait and resume; a failing one ends playback where the music ends |
 | `music-views.spec.js` | MIDI downloads in every mode (read back: tracks, programs, title, key); key signatures (E major's four sharps and its chips' sharps; None (C) brings back flats; F minor's four flats); the roll draws; the score draws, redraws for a clef, highlights, and its tab is remembered; page turns at bar 9 (@slow); MusicXML downloads in every mode are well formed with full bars; score rows fit their notes |
 | `color-parity.spec.js` | @slow: 112 settings (7 modes × 4 orders × 2 sizes × 2 starts) give the same colour list, digits and canvas pixels as `prototypes/pi-color-generator.html`; the readout and readout formats match |

@@ -85,6 +85,17 @@ button.ghost:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px;
 .presets button { font: 500 13px/1 var(--mono); background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
 .presets button:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
 button.play:disabled { opacity: 0.5; cursor: default; }
+/* Play button icon: a triangle while stopped, a square while playing (data-playing, set by player.js).
+   Wide screens show the label only; phones show the icon only, the label kept for screen readers. */
+button.play { display: inline-flex; align-items: center; justify-content: center; }
+.play-icon { display: none; width: 18px; height: 18px; fill: currentColor; }
+.play-icon .icon-stop, button.play[data-playing="true"] .icon-play { display: none; }
+button.play[data-playing="true"] .icon-stop { display: inline; }
+@media (max-width: 599px) {
+  button.play { min-width: 0; padding: 0; width: 52px; height: 42px; flex: none; }
+  .play-icon { display: block; }
+  .play-label { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
 /* Random start row: button, max select, "each play" checkbox. */
 .random-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .random-row select { width: auto; }
@@ -157,6 +168,12 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .playback-row > .field { flex: 1 1 120px; max-width: 200px; }
 .playback-row .transport { flex: 1 1 220px; min-width: 0; }
 .playback-row .status { min-width: 0; }
+/* Phones: the fields and the Play icon on one line, the status on its own line under them. */
+@media (max-width: 599px) {
+  .playback-row > .field { flex-basis: 100px; }
+  .playback-row .transport { display: contents; }
+  .playback-row .status { flex: 1 0 100%; }
+}
 
 /* Card order in the left column, per view (main[data-active-view]): the Series card first in both.
    Music: Series, Scheme, Sound (Play is in the music card's header). Colour: Series, Colour, Image. */

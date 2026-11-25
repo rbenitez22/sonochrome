@@ -77,3 +77,24 @@ test('a due refill computes more digits in a background worker while π plays (n
   await expect(page.locator('#status')).toHaveText(/ · ∞ · digit /);
   await page.click('#play');
 });
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 375, height: 740 } });
+
+  test('Play is an icon, a triangle that becomes a square while playing, and keeps its name', async ({ page }) => {
+    await openPlayer(page, 'pi');
+    const play = page.locator('#play');
+    await expect(play.locator('.icon-play')).toBeVisible();
+    await expect(play.locator('.play-label')).toHaveCSS('position', 'absolute');
+    await expect(play).toHaveAccessibleName('Play');
+    const fieldTop = (await page.locator('#lenMode').boundingBox()).y;
+    expect((await play.boundingBox()).y).toBeLessThan(fieldTop + 50);   // on the fields' line
+    await play.click();
+    await expect(play).toHaveAccessibleName('Stop');
+    await expect(play.locator('.icon-stop')).toBeVisible();
+    await expect(play.locator('.icon-play')).toBeHidden();
+    await play.click();
+    await expect(play).toHaveAccessibleName('Play');
+    await expect(play.locator('.icon-play')).toBeVisible();
+  });
+});
