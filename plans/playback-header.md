@@ -49,6 +49,7 @@ Requested on 2026-11-24, after piece 3. Today Compute shows (in the Image card) 
 
 - Phones: the sheet music tools (Clef, Key signature, downloads) wrap inside the music card instead of overflowing it.
 - Phones, Music: Scheme and Sound move above the music card (Series, Scheme, Sound, music card), as on Colour, since all settings cards are collapsed.
+- Sheet music downloads as icons (both widths): MusicXML is two beamed eighths whose second note is a detached download arrow with a tray; MIDI is a speaker with the same arrow. Labels stay as screen-reader text, tooltips from `title`.
 
 ## After each piece
 

@@ -175,3 +175,12 @@ test.describe('on a phone', () => {
     await expect(page.locator('#dlMidi')).toBeInViewport();
   });
 });
+
+test('the sheet music downloads are icons that keep their names and tooltips', async ({ page }) => {
+  await openPlayer(page, 'pi');
+  await page.click('#tab-sheet');
+  await expect(page.locator('#dlXml')).toHaveAccessibleName('Download MusicXML');
+  await expect(page.locator('#dlMidi')).toHaveAccessibleName('Download MIDI');
+  await expect(page.locator('#dlXml svg')).toBeVisible();
+  await expect(page.locator('#dlMidi')).toHaveAttribute('title', /MIDI file/);
+});
