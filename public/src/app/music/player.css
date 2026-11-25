@@ -1,5 +1,5 @@
 /* Music player styles, from the Pi Notes prototype. */
-/* Layout: controls (Scheme, Sound) on the left; header panel and music displays on the right. */
+/* Layout: controls (Series, Scheme, Sound) on the left; the music card, headed by the playback row, on the right. */
 :root {
   --bg: #f1f4f7;
   --panel: #ffffff;
@@ -41,8 +41,8 @@ main { max-width: 1440px; height: 100vh; margin: 0 auto; padding: 20px 16px 16px
 /* Controls column: Scheme and Sound stacked; scrolls when taller than the screen. */
 .controls { grid-area: controls; display: flex; flex-direction: column; gap: 16px; min-height: 0;
   overflow-y: auto; overscroll-behavior: contain; padding: 4px; margin: -4px; }
-/* Stage: header panel, then digits, piano roll and sheet music stacked.
-   The sheet music card takes the leftover height; the stage scrolls only if the screen is too short. */
+/* Stage: the active view's card (Music or Colour).
+   The music card takes the leftover height; the stage scrolls only if the screen is too short. */
 .stage { grid-area: stage; display: flex; flex-direction: column; gap: 16px; min-width: 0; min-height: 0; overflow-y: auto; }
 .stage > .card { flex: none; }
 /* Music card: one tab panel at a time, filling the stage's leftover height. */
@@ -73,7 +73,7 @@ h1 span { color: var(--accent); }
 .card h2 { font: 500 12px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 10px; }
 
 .transport { display: flex; align-items: center; gap: 12px; }
-button.play { font: 700 17px/1 var(--display); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 14px 26px; min-width: 120px; cursor: pointer; }
+button.play { font: 700 17px/1 var(--display); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 10px; padding: 9px 26px; min-width: 120px; cursor: pointer; }
 button.play:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
 .progress { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
 .bar { height: 10px; border-radius: 6px; background: var(--line); overflow: hidden; }
@@ -151,15 +151,18 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .series-blurb { margin: 6px 0 12px; font-size: 14px; color: var(--muted); }
 /* The source's params (e.g. its base), between the description and the start position. */
 .series-params { margin-bottom: 12px; }
-/* Playback card: the Length row above Play. */
-.playback-card .length-row { margin-bottom: 14px; }
+/* Playback row: the music card's header. Length, the count or time, then Play and its status on one line;
+   on narrow screens Play and the status wrap onto their own line. */
+.playback-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; padding-bottom: 12px; margin-bottom: 10px; border-bottom: 1px solid var(--line); }
+.playback-row > .field { flex: 1 1 120px; max-width: 200px; }
+.playback-row .transport { flex: 1 1 220px; min-width: 0; }
+.playback-row .status { min-width: 0; }
 
 /* Card order in the left column, per view (main[data-active-view]): the Series card first in both.
-   Music: Series, Playback (so Play is in view), Scheme, Sound. Colour: Series, Colour, Image. */
+   Music: Series, Scheme, Sound (Play is in the music card's header). Colour: Series, Colour, Image. */
 .controls > .series-panel { order: 1; }
-.controls > .playback-card { order: 2; }
-.controls > .scheme-card { order: 3; }
-.controls > .sound-card { order: 4; }
+.controls > .scheme-card { order: 2; }
+.controls > .sound-card { order: 3; }
 main[data-active-view="color"] .controls > .color-options { order: 2; }
 main[data-active-view="color"] .controls > .image-card { order: 3; }
 
@@ -171,10 +174,9 @@ main[data-active-view="color"] .controls > .image-card { order: 3; }
   /* Same specificity as the desktop rules above, so these win on narrow screens. */
   .masthead { order: 0; }
   main[data-active-view] .controls > .series-panel { order: 1; }
-  main[data-active-view] .controls > .playback-card { order: 2; }
-  main[data-active-view] .stage > .music-card { order: 3; }
-  main[data-active-view] .controls > .scheme-card { order: 4; }
-  main[data-active-view] .controls > .sound-card { order: 5; }
+  main[data-active-view] .stage > .music-card { order: 2; }
+  main[data-active-view] .controls > .scheme-card { order: 3; }
+  main[data-active-view] .controls > .sound-card { order: 4; }
   main[data-active-view="color"] .controls > .color-options { order: 2; }
   main[data-active-view="color"] .controls > .image-card { order: 3; }
   main[data-active-view="color"] .stage > .color-card { order: 4; }

@@ -23,7 +23,26 @@
   </header>
 
   <div class="stage">
-  <section class="card music-card" aria-label="Music" data-view="music">
+  <section class="card music-card" id="musicParts" aria-label="Music" data-view="music">
+    <div class="playback-row" role="group" aria-label="Playback">
+      <div class="field">
+        <label for="lenMode">Length</label>
+        <select id="lenMode"><option value="notes">Notes</option><option value="time">Time</option><option value="infinite">Infinite (until Stop)</option></select>
+      </div>
+      <div class="field" id="rowCount">
+        <label for="count">Notes to play</label>
+        <input type="number" id="count" min="4" max="128" value="24">
+      </div>
+      <div class="field" id="rowDuration" hidden>
+        <label for="duration">Time (m:ss)</label>
+        <input type="text" id="duration" value="1:00" inputmode="numeric" autocomplete="off" spellcheck="false">
+        <p class="err" id="durErr" hidden></p>
+      </div>
+      <div class="transport">
+        <button class="play compute-trigger" id="play" type="button">Play</button>
+        <div class="status" id="status" aria-live="polite"></div>
+      </div>
+    </div>
     <div class="cardhead">
       <div class="tabs" role="tablist" aria-label="Music views" id="tabs">
         <button type="button" role="tab" id="tab-digits" data-tab="digits" aria-controls="digitsBody" aria-selected="true"><span id="unitsTab">Digits</span><span class="long"> &rarr; notes</span></button>
@@ -92,28 +111,6 @@
     <div class="progress" id="prog" hidden>
       <div class="bar" role="progressbar" aria-label="Computing digits" aria-valuemin="0" aria-valuemax="100" id="bar"><div class="fill" id="fill"></div></div>
       <div class="progrow"><div class="status" id="progText"></div><button class="ghost" id="cancel" type="button">Cancel</button></div>
-    </div>
-  </section>
-  <section class="card playback-card" id="musicParts" aria-label="Playback" data-view="music">
-    <h2>Playback</h2>
-    <div class="grid length-row">
-      <div class="field">
-        <label for="lenMode">Length</label>
-        <select id="lenMode"><option value="notes">Notes</option><option value="time">Time</option><option value="infinite">Infinite (until Stop)</option></select>
-      </div>
-      <div class="field" id="rowCount">
-        <label for="count">Notes to play</label>
-        <input type="number" id="count" min="4" max="128" value="24">
-      </div>
-      <div class="field" id="rowDuration" hidden>
-        <label for="duration">Time (m:ss)</label>
-        <input type="text" id="duration" value="1:00" inputmode="numeric" autocomplete="off" spellcheck="false">
-        <p class="err" id="durErr" hidden></p>
-      </div>
-    </div>
-    <div class="transport">
-      <button class="play compute-trigger" id="play" type="button">Play</button>
-      <div class="status" id="status" aria-live="polite"></div>
     </div>
   </section>
   <section class="card image-card" id="imageCard" aria-label="Image" data-view="color" hidden>

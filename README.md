@@ -225,9 +225,9 @@ Changing the hash switches series or view in place, so browser Back and Forward 
 
 **Views:** **Music | Colour** tabs under the heading switch the page between views. Every element of one view carries `data-view="music"` or `data-view="color"`, and only the active view's are shown. Switching to Colour stops playback, and each view keeps its own settings.
 
-**Layout** (`plans/wide-layout.md`): the page is up to 1440 px wide. A 440 px left column holds every settings card, and the right column holds the active view's card at full height, so a Colour image or the music views are fully in view.
+**Layout** (`plans/wide-layout.md`, `plans/playback-header.md`): the page is up to 1440 px wide. A 440 px left column holds every settings card, and the right column holds the active view's card at full height, so a Colour image or the music views are fully in view.
 - **Left column, top to bottom:**
-  - **Music:** Series, Playback (Length, Play, status), Scheme, Sound.
+  - **Music:** Series, Scheme, Sound. Playback (Length, Notes to play or Time, Play, status) is a row at the top of the music card, above its tabs, so Play is always beside the output.
   - **Colour:** Series, Colour (mode, fill order, readout format), Image (size and pixel size with presets, Copy colors, Download PNG, status).
 - **Series card** (shared by both views):
   - the series name, its description and a "← All series" link;
@@ -235,7 +235,7 @@ Changing the hash switches series or view in place, so browser Back and Forward 
   - the start position, with presets and random start;
   - the progress bar and Cancel, when a view needs digits computed first.
 - **Card order** is CSS `order`, keyed on `main[data-active-view]`, which `showViewParts` sets. No elements move.
-- **Phones (under 900 px):** everything is one column: Series, Playback or the Colour options and Image, then the view, then the rest.
+- **Phones (under 900 px):** everything is one column. Music: Series, the music card (with its playback row), Scheme, Sound. Colour: Series, the Colour options and Image, then the Result card.
 - **Colour view behaviour:**
   - The image is rebuilt on every change. Past `quickLength`, a **Compute** button computes first, and an image that would read past `maxLength` shrinks to fit.
   - Modes a source refuses are disabled, with the reason (HSL and hex literal on Thue–Morse).

@@ -8,7 +8,7 @@ Requested on 2026-11-21, between pieces 7a and 7b; the user chose "both views". 
 - **Head panel removed:** the Series panel and the view's panel (Playback or Image) become cards in the left column. The right column (the stage) holds only the active view's card, at full height.
 - **Left column, top to bottom:**
   - **Colour:** Series, then Colour, then Image. (First Colour, Series, Image; on 2026-11-21 the user asked for Series first, as in Music.)
-  - **Music:** Series, then Playback, then Scheme, then Sound. Playback stays near the top so Play is visible without scrolling; below Scheme, which is tall with the pinned codes, it would fall off a 900 px-high screen.
+  - **Music:** Series, then Playback, then Scheme, then Sound. Playback stays near the top so Play is visible without scrolling; below Scheme, which is tall with the pinned codes, it would fall off a 900 px-high screen. (Superseded 2026-11-24 by `playback-header.md`: Playback is now the music card's header row.)
 - **Phones (under 900 px):** one column, by the same rule as now: settings needed to start come first, then the view, then the rest.
   - **Music:** Series, Playback, the music card, Scheme, Sound.
   - **Colour:** Series, Colour, Image, the Result card.
