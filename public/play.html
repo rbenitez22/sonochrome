@@ -71,7 +71,14 @@
   </section>
 
   <section class="card color-card" id="colorParts" aria-label="Colour" data-view="color" hidden>
-    <h2>Result</h2>
+    <div class="result-row" role="group" aria-label="Draw">
+      <div class="actions">
+        <button class="play compute-trigger" id="compute" type="button">Draw</button>
+        <button class="ghost" id="copy" type="button">Copy colors</button>
+        <button class="ghost" id="savePng" type="button">Download PNG</button>
+      </div>
+      <div class="status" id="colorStatus" role="status"></div>
+    </div>
     <div class="color-stage"><canvas id="cv" width="320" height="320" role="img" aria-label="The series as coloured cells"></canvas></div>
     <div class="readout" id="readout"></div>
     <h2 class="list-head" id="digitsHead">Digits used</h2>
@@ -104,7 +111,7 @@
           <select id="randomMax">
             <option value="20000">20k</option><option value="100000">100k</option><option value="1000000" selected>1M</option><option value="10000000">10M</option><option value="20000000">20M</option>
           </select>
-          <label class="check" for="randomEach"><input type="checkbox" id="randomEach"> Random each play</label>
+          <label class="check" for="randomEach"><input type="checkbox" id="randomEach"> Random each time</label>
         </div>
       </div>
     </div>
@@ -131,12 +138,6 @@
       <div class="field wide"><div class="pills" id="sizePresets" aria-label="Image size presets"></div></div>
       <div class="field wide"><div class="pills" id="pxPresets" aria-label="Pixel size presets"></div></div>
     </div>
-    <div class="actions" data-collapse-keep>
-      <button class="play compute-trigger" id="compute" type="button" hidden>Compute</button>
-      <button class="ghost" id="copy" type="button">Copy colors</button>
-      <button class="ghost" id="savePng" type="button">Download PNG</button>
-    </div>
-    <div class="status" id="colorStatus" role="status" data-collapse-keep></div>
   </section>
   <section class="card color-options" aria-label="Colour" data-view="color" hidden>
     <h2>Colour</h2>

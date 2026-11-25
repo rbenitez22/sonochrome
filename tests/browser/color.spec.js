@@ -7,9 +7,9 @@ test('past quickLength the view offers Compute, then draws (needs GMP)', async (
   await openPlayer(page, 'pi/color');
   await page.fill('#start', '19000');
   await expect(status(page)).toHaveText(/^Digits up to 21,304 are not computed yet\. Press Compute/);
-  await expect(page.locator('#compute')).toBeVisible();
+  await expect(page.locator('#compute')).toHaveText('Compute');
   await page.click('#compute');
-  await expect(page.locator('#compute')).toBeHidden({ timeout: 60_000 });
+  await expect(page.locator('#compute')).toHaveText('Draw', { timeout: 60_000 });
   await expect(status(page)).toHaveText('16×16 cells · 2304 digits used (positions 19000–21303) · canvas 320×320px');
 });
 
@@ -41,4 +41,19 @@ test('modes a series refuses are disabled with the reason', async ({ page }) => 
   const disabled = await page.$$eval('#mode option', (os) => os.filter((o) => o.disabled).map((o) => o.value));
   expect(disabled).toEqual(['hex', 'hsl', 'wheel', 'shade']);
   await expect(page.locator('#mode option[value=hsl]')).toHaveAttribute('title', /^Not available for Thue–Morse: it /);
+});
+
+test('with Random each time, Draw picks a new random start and draws it', async ({ page }) => {
+  await openPlayer(page, 'pi/color');
+  await expect(page.locator('#compute')).toHaveText('Draw');
+  await page.selectOption('#randomMax', '20000');
+  await page.check('#randomEach');
+  const starts = new Set();
+  for (let i = 0; i < 3; i++) {
+    await page.click('#compute');
+    const start = await page.inputValue('#start');
+    starts.add(start);
+    await expect(status(page)).toContainText('(positions ' + start.replace(/,/g, '') + '–');
+  }
+  expect(starts.size).toBeGreaterThan(1);
 });

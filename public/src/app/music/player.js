@@ -11,7 +11,7 @@ import {
   lastDuration, clefSetting, keySigSetting,
 } from './controls.js';
 import { keySignature } from '../../mappings/music/keys.js';
-import { randomizeStart, randomEachPlay } from '../start.js';
+import { randomizeStart, randomEachTime } from '../start.js';
 import { renderChips, clearChips, appendChips, removeChips, setChipOn, scrollChipIntoView } from './chips.js';
 import { initTabs, restoreTab, isShown } from './tabs.js';
 import { drawRoll } from './roll.js';
@@ -273,7 +273,7 @@ function stop() {
 async function play() {
   if (playing) { stop(); return; }
   if (supply.computing) return;
-  if (randomEachPlay()) { randomizeStart(); await refresh(); }
+  if (randomEachTime()) { randomizeStart(); await refresh(); }
   if (pendingNeed) {
     unlockAudio();
     if (await page.compute(pendingNeed)) { await refresh(); if (!pendingNeed) startPlayback(); }

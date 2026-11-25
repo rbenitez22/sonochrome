@@ -228,17 +228,18 @@ Changing the hash switches series or view in place, so browser Back and Forward 
 **Layout** (`plans/wide-layout.md`, `plans/playback-header.md`): the page is up to 1440 px wide. A 440 px left column holds every settings card, and the right column holds the active view's card at full height, so a Colour image or the music views are fully in view.
 - **Left column, top to bottom:**
   - **Music:** Series, Scheme, Sound. Playback (Length, Notes to play or Time, Play, status) is a row at the top of the music card, above its tabs, so Play is always beside the output. Under 600 px the Play button is an icon only: a triangle, a square while playing (`data-playing` on `#play`, set by `showPlaying` in `player.js`); its text label stays for screen readers, so the button's name is still Play or Stop.
-  - **Colour:** Series, Colour (mode, fill order, readout format), Image (size and pixel size with presets, Copy colors, Download PNG, status).
+  - **Colour:** Series, Colour (mode, fill order, readout format), Image (size and pixel size with presets). The Result card has a header row: **Draw** (or **Compute**), Copy colors, Download PNG, then the status.
 - **Series card** (shared by both views):
   - the series name, its description and a "← All series" link;
   - the source's params: a **Base** select for the constants, kept in the route as `?base=12` (left out at the default of 10);
   - the start position, with presets and random start;
   - the progress bar and Cancel, when a view needs digits computed first.
-- **Collapsible cards on phones** (under 900 px, `app/collapse.js`): each settings card's heading (Series, Scheme, Sound; Colour, Image) becomes a button with the title, a one-line summary of its settings (`app/card-summaries.js`, e.g. "π · base 10 · from 0") and a chevron. Cards start collapsed, so the output is close to the top; each card's open or closed state is kept in `localStorage` (`sonochrome.collapsed.<card class>`). The progress bar, the Image card's buttons and its status are marked `data-collapse-keep` and stay visible when collapsed. Wider than 900 px the cards are plain.
+- **Collapsible cards on phones** (under 900 px, `app/collapse.js`): each settings card's heading (Series, Scheme, Sound; Colour, Image) becomes a button with the title, a one-line summary of its settings (`app/card-summaries.js`, e.g. "π · base 10 · from 0") and a chevron. Cards start collapsed, so the output is close to the top; each card's open or closed state is kept in `localStorage` (`sonochrome.collapsed.<card class>`). The progress bar is marked `data-collapse-keep` and stays visible when collapsed. Wider than 900 px the cards are plain.
 - **Card order** is CSS `order`, keyed on `main[data-active-view]`, which `showViewParts` sets. No elements move.
 - **Phones (under 900 px):** everything is one column. Music: Series, the music card (with its playback row), Scheme, Sound. Colour: Series, the Colour options and Image, then the Result card.
 - **Colour view behaviour:**
-  - The image is rebuilt on every change. Past `quickLength`, a **Compute** button computes first, and an image that would read past `maxLength` shrinks to fit.
+  - The image is rebuilt on every change, and an image that would read past `maxLength` shrinks to fit.
+  - The main button (`#compute`) is always shown. It reads **Compute** while the positions needed are not computed yet (past `quickLength`) and computes them; otherwise it reads **Draw** and redraws. With **Random each time** ticked (the Series card), Draw first picks a new random start within "up to", computing if needed, so each press gives a new swatch.
   - Modes a source refuses are disabled, with the reason (HSL and hex literal on Thue–Morse).
 
 **Colour parity with `prototypes/pi-color-generator.html`** (Chromium and Firefox, 2026-11-21): 112 settings (7 modes × 4 orders × 2 sizes × 2 starts) give identical colour lists, "Digits used" text and canvas pixels, and the readout matches. The differences are deliberate:
@@ -258,7 +259,7 @@ Modules behind the page, each with one job:
 |---|---|
 | `app/dom.js` | `$(id)`, `fmtN(n)`, `fillSelect(select, [[value, label]])` |
 | `app/progress.js` | `showProgress(p, label, startedAt)`, `hideProgress()` |
-| `app/start.js` | The start position in the Series panel: `initStart(onChange)`, `readStart()` (validated, clamped to the source), `setStartLimit(source)` (hides presets and random ranges past it), `randomizeStart()`, `randomEachPlay()` |
+| `app/start.js` | The start position in the Series panel: `initStart(onChange)`, `readStart()` (validated, clamped to the source), `setStartLimit(source)` (hides presets and random ranges past it), `randomizeStart()`, `randomEachTime()` (the "Random each time" box: Music on each Play, Colour on each Draw) |
 | `app/unit.js` | `unitWord(source)` / `unitWords(source)` / `UnitWords(source)`: "digit(s)" for digit series, "term(s)" for integer series, used in every message, label and the MusicXML subtitle |
 | `app/series-panel.js` | `showSeries(source, params, onParamsChange)`: the panel heading, description, page titles, and a select per source param. `routeParams(source, params)` keeps the valid, non-default params for the route; `paramValue(param, params)` gives one param's value. |
 | `app/route.js` | `parseRoute(hash)`, `formatRoute(id, params)`, `playerHref(id, params)` |
@@ -272,7 +273,7 @@ Modules behind the page, each with one job:
 | `app/music/score.js` | `renderScore(piece, clefSetting, atBeat, key)` (VexFlow; `key` from `keySignature`, drawn after the clef on every system, with accidentals only where the key doesn't cover a note), `showScoreMessage`, `setScoreNoteOn`, `scrollScoreTo`, and page tracking for streaming (`pageOf`, `renderedScorePage`, `scoreIsDirty`, `markScoreDirty`, `resetScorePage`). Each stave row fits its notes: a first pass measures how far they reach above and below the staff, and the second gives every row at least that room (minimum 104 px, the prototype's fixed row). Ledger-line notes are never clipped, and rows never overlap. |
 | `app/music/download.js` | The **Download MusicXML** and **Download MIDI** buttons (Sheet music tools): `updateDownload(piece, playing, playedBeats)` (Infinite needs Play first), `collectScore(evs, { sourceName, start, bpm, parts, clefSetting, key })` (pure, tested), `downloadMusicXML(piece, seq, beatsPlayed, meta)`, `downloadMidi(piece, seq, beatsPlayed, meta)`. Both export the same events and span, named `<source>-<start>-<end>.musicxml` / `.mid`. |
 | `app/play.js` | The page entry: follows the route, creates the source's supply, fills the Series panel, runs foreground computes (`page.compute(need)`, with progress and Cancel), and switches views. Each view implements `{ name, computeVerb, setSource(source, supply, probe), refresh(), show(), hide(), status(text) }`. |
-| `app/color/view.js` | The Colour view, `createColorView(page)`: rebuilds the image, Compute when pending, the inspector, copy and PNG |
+| `app/color/view.js` | The Colour view, `createColorView(page)`: rebuilds the image; the main button (Compute when pending, else Draw, with a new random start under Random each time); the inspector, copy and PNG |
 | `app/color/controls.js` | The Colour and Image forms: `initColorControls({ onChange, onFormatChange })`, `readImageSettings()` → `{ mode, order, format, w, h, px }` (clamped: up to 300×300 cells, 200 px), `setModesFor(source, probe)`, `refreshPills()` |
 | `app/color/canvas.js` | `drawCells(image, px)`, `clearCanvas()`, `cellAt(event, image)`, `cellPixels(w, h, px)`. The pixels per cell are lowered when needed, so the canvas stays within 16,000 px a side and 4096 × 4096 px in area. That area limit is Safari's on iPhone and iPad, which otherwise draws a blank canvas; the same cap applies in every browser. The status line says when it applies (300×300 cells at 20 px → 13 px). |
 | `app/color/lists.js` | `showReadout(hit, format)`, `showDigitsUsed(seq, start, end)` (up to 600 symbols), `showColorList(image, format)` (first 40) |
@@ -333,8 +334,8 @@ const seq = (await supply.ready(5_000)) ?? (await supply.compute(5_000_000, (p, 
 | `refill.spec.js` | Fake sources registered in the page: a slow refill makes the music wait and resume; a failing one ends playback where the music ends |
 | `music-views.spec.js` | MIDI downloads in every mode (read back: tracks, programs, title, key); key signatures (E major's four sharps and its chips' sharps; None (C) brings back flats; F minor's four flats); the roll draws; the score draws, redraws for a clef, highlights, and its tab is remembered; page turns at bar 9 (@slow); MusicXML downloads in every mode are well formed with full bars; score rows fit their notes |
 | `color-parity.spec.js` | @slow: 112 settings (7 modes × 4 orders × 2 sizes × 2 starts) give the same colour list, digits and canvas pixels as `prototypes/pi-color-generator.html`; the readout and readout formats match |
-| `color.spec.js` | Compute past `quickLength` (needs GMP); shrinking to fit at Recamán's cap; the iOS canvas-area cap, painted to the corner; the PNG's name; modes a series refuses |
-| `collapse.spec.js` | On a phone: settings cards start collapsed with summaries; a heading opens its card, the summary follows edits, the state survives a reload; the Image card's buttons stay visible collapsed. Wide: no toggles. |
+| `color.spec.js` | Compute past `quickLength`, then the button reads Draw (needs GMP); Draw with Random each time picks new starts; shrinking to fit at Recamán's cap; the iOS canvas-area cap, painted to the corner; the PNG's name; modes a series refuses |
+| `collapse.spec.js` | On a phone: settings cards start collapsed with summaries; a heading opens its card, the summary follows edits, the state survives a reload; the Image card's summary follows edits. Wide: no toggles. |
 | `series.spec.js` | All nine series play and draw with the right default scheme, colour mode and digit/term wording; base 12 and 16; the base-7 steps note; ln 2 in hex from 100k in the worker (needs GMP); integer readouts |
 
 ## Requirements

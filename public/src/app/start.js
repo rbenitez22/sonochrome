@@ -29,7 +29,7 @@ export function randomizeStart() {
   $('start').value = fmtN(randomStart(Math.min(+$('randomMax').value, maxStart)));
 }
 
-export const randomEachPlay = () => $('randomEach').checked;
+export const randomEachTime = () => $('randomEach').checked;
 
 // onChange() runs whenever the start position changes (typed, preset or random).
 export function initStart(onChange) {

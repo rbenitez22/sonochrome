@@ -32,6 +32,19 @@ Requested on 2026-11-24. The Playback card leaves the left column and becomes a 
 - New module `public/src/app/collapse.js` (wiring + state only); summaries come from small functions next to each card's existing code.
 - **Checks:** a phone-viewport test: cards start collapsed, tapping expands, state survives a reload; on desktop the bodies are always visible.
 
+## Piece 4 — Colour: a header row on the Result card, Compute always there
+
+Requested on 2026-11-24, after piece 3. Today Compute shows (in the Image card) only while digits are missing, so it disappears once they are computed, and "Random each play" does nothing on Colour.
+
+- **Result card header row** (all widths, like Music's playback row): `[Draw] [Copy colors] [Download PNG]` then the status. These move out of the Image card, which becomes settings only (its `data-collapse-keep` marks go).
+- **The main button is always visible:**
+  - Digits missing → labelled **Compute**: computes them, then draws (as now).
+  - **Random each time** ticked → labelled **Draw**: picks a new random start (within "up to"), then draws, computing first if needed. Pressing it again gives a new random swatch each time.
+  - Otherwise → labelled **Draw**: redraws from the current settings (images already redraw on every change, so this mostly confirms the current image).
+- **Wording:** "Random each play" becomes **"Random each time"**, shared by both views (Music still picks a new start on each Play).
+- Phones: on Colour, the order becomes Series, Colour, Image (all collapsed), then the Result card with its header row near the top.
+- **Checks:** a test that Draw with Random each time changes the start and the image; that Compute shows while digits are missing and turns back to Draw; the existing colour tests updated for the moved buttons.
+
 ## After each piece
 
 README updated, browser suite run, commit; deploy when you say.

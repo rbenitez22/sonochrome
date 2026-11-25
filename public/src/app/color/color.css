@@ -1,12 +1,17 @@
 /* Colour view styles, from the Pi Color Generator prototype (renamed where the player already uses a name). */
 
-/* Image panel: size fields with × between, preset pills, actions. */
+/* Image panel: size fields with × between, preset pills. */
 .size-row { display: flex; gap: 8px; align-items: center; }
 .pills { display: flex; flex-wrap: wrap; gap: 6px; }
 .pills button { font: 500 13px/1 var(--mono); background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 8px 12px; cursor: pointer; }
 .pills button[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .pills button:focus-visible { outline: 3px solid var(--hot); outline-offset: 2px; }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 8px; }
+
+/* Result card header row: Draw (or Compute), Copy colors, Download PNG, then the status; wraps on narrow screens. */
+.result-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.result-row .actions { margin: 0; }
+.result-row .status { flex: 1 1 220px; min-width: 0; }
 
 /* Result card: the canvas on a checkerboard, scrolling when large; the readout under it. */
 .color-stage { background: repeating-conic-gradient(var(--line) 0 25%, transparent 0 50%) 0 0/16px 16px; border-radius: 8px;

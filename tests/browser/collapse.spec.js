@@ -32,10 +32,9 @@ test.describe('on a phone', () => {
     await expect(page.locator('.scheme-card .card-body')).toBeHidden();
   });
 
-  test('on Colour, the Image card keeps its buttons in view when collapsed', async ({ page }) => {
+  test('on Colour, the Image card collapses and its summary follows edits', async ({ page }) => {
     await openPlayer(page, 'pi/color');
     await expect(page.locator('.image-card .card-body')).toBeHidden();
-    await expect(page.locator('#savePng')).toBeVisible();
     await page.click('.image-card .card-toggle');
     await page.fill('#w', '20');   // typed, so the input event bubbles as a user's does
     await expect(page.locator('.image-card .card-summary')).toHaveText('20×16 cells · 20 px per cell');
